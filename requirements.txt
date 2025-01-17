@@ -3,3 +3,5 @@ uvicorn[standard]
 xarray
 netCDF4
 pydantic
+pydantic-settings
+python-dotenv
