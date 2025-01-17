@@ -9,9 +9,11 @@ app = FastAPI(
     version="1.0.0",
 )
 
+
 @lru_cache
 def get_settings():
     return config.Settings()
+
 
 # Include the routes
 app.include_router(general.router, prefix="/general", tags=["General Data"])
