@@ -14,14 +14,15 @@ def get_settings():
     return config.Settings()
 
 
-@router.get("/{region}/models", summary="List of available models")
+@router.get("/{region}/{date}/models", summary="List of available models")
 async def list_models(
         region: str,
+        date: str,
         settings: Annotated[config.Settings, Depends(get_settings)]):
     """
     Get the list of available models for a given region.
     """
-    return await _handle_request(region, settings, get_model_list)
+    return await _handle_request(get_model_list, settings, region, date=date)
 
 
 @router.get("/{region}/last-forecast-date", summary="Last available forecast date")
@@ -31,13 +32,13 @@ async def get_last_forecast_date(
     """
     Get the last available forecast date for a given region.
     """
-    return await _handle_request(region, settings, get_last_forecast_date_from_files)
+    return await _handle_request(get_last_forecast_date_from_files, settings, region)
 
 
 # Helper function to handle requests and catch exceptions
-async def _handle_request(region: str, settings: config.Settings, func):
+async def _handle_request(func, settings: config.Settings, region: str, **kwargs):
     try:
-        return await func(region, settings.data_dir)
+        return await func(settings.data_dir, region, **kwargs)
     except FileNotFoundError:
         logging.error(f"Files not found for region: {region}")
         raise HTTPException(status_code=404, detail="Region or forecast not found")
