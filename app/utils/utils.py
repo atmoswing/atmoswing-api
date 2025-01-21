@@ -42,3 +42,14 @@ def list_files(region_path: str, datetime_str: str) -> list:
     files = sorted(glob.glob(full_pattern))
 
     return files
+
+
+def get_file_path(region_path: str, datetime_str: str, method: str, configuration: str) -> str:
+    dt = convert_to_datetime(datetime_str)
+    path = f"{region_path}/{dt.year:04d}/{dt.month:02d}/{dt.day:02d}"
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Date directory not found: {path}")
+
+    file_path = f"{path}/{dt.year:04d}-{dt.month:02d}-{dt.day:02d}_{dt.hour:02d}.{method}.{configuration}.nc"
+
+    return file_path

@@ -6,6 +6,16 @@ import dask
 from ..utils import utils
 
 
+async def get_last_forecast_date_from_files(data_dir: str, region: str):
+    """
+    Get the last available forecast date for a given region.
+    """
+    region_path = utils.check_region_path(data_dir, region)
+    last_forecast_date = await asyncio.to_thread(_get_last_forecast_date, region_path)
+
+    return {"last_forecast_date": last_forecast_date}
+
+
 async def get_method_list(data_dir: str, region: str, date: str):
     """
     Get the list of available method types for a given region.
@@ -28,14 +38,51 @@ async def get_method_configs_list(data_dir: str, region: str, date: str):
     return {"method_configs": method_configs}
 
 
-async def get_last_forecast_date_from_files(data_dir: str, region: str):
+async def get_entities_list(data_dir: str, region: str, date: str, method: str,
+                            configuration: str):
     """
-    Get the last available forecast date for a given region.
+    Get the list of available entities for a given region, date, method, and configuration.
     """
     region_path = utils.check_region_path(data_dir, region)
-    last_forecast_date = await asyncio.to_thread(_get_last_forecast_date, region_path)
+    entities = await asyncio.to_thread(_get_entities_from_netcdf, region_path, date, method, configuration)
 
-    return {"last_forecast_date": last_forecast_date}
+    return {"entities": entities}
+
+
+def _get_last_forecast_date(region_path: str):
+    """
+    Synchronous function to get the last forecast date from the filenames.
+    Directory structure: region_path/YYYY/MM/DD/YYYY-MM-DD_HH.method.region.nc
+    """
+    def get_latest_subdir(path):
+        subdirs = sorted(os.listdir(path), reverse=True)
+        if not subdirs:
+            raise ValueError(f"No subdirectories found in {path}")
+        return subdirs[0]
+
+    # Get the latest year, month, and day
+    year = get_latest_subdir(region_path)
+    month = get_latest_subdir(f"{region_path}/{year}")
+    day = get_latest_subdir(f"{region_path}/{year}/{month}")
+
+    # Get the latest file
+    files = sorted(os.listdir(f"{region_path}/{year}/{month}/{day}"), reverse=True)
+    if not files:
+        raise ValueError(f"No files found in {region_path}/{year}/{month}/{day}")
+
+    # Extract the hour from the latest file
+    last_file = files[0]
+    parts = last_file.split("_")
+    if len(parts) < 2:
+        raise ValueError(f"Invalid file format ({last_file})")
+    hour = parts[1].split(".")[0]
+
+    last_forecast_date = f"{year}-{month}-{day}T{hour}"
+
+    # Check that the forecast date is valid
+    _ = utils.convert_to_datetime(last_forecast_date)
+
+    return last_forecast_date
 
 
 def _get_methods_from_netcdf(region_path: str, date: str):
@@ -100,38 +147,40 @@ def _get_method_configs_from_netcdf(region_path: str, date: str):
     return method_configs
 
 
-def _get_last_forecast_date(region_path: str):
-    """
-    Synchronous function to get the last forecast date from the filenames.
-    Directory structure: region_path/YYYY/MM/DD/YYYY-MM-DD_HH.method.region.nc
-    """
-    def get_latest_subdir(path):
-        subdirs = sorted(os.listdir(path), reverse=True)
-        if not subdirs:
-            raise ValueError(f"No subdirectories found in {path}")
-        return subdirs[0]
+def _get_entities_from_netcdf(region_path: str, date: str, method: str, configuration: str):
+    # Synchronous function to get entities from the NetCDF file
+    if date == 'latest':
+        date = _get_last_forecast_date(region_path)
 
-    # Get the latest year, month, and day
-    year = get_latest_subdir(region_path)
-    month = get_latest_subdir(f"{region_path}/{year}")
-    day = get_latest_subdir(f"{region_path}/{year}/{month}")
+    file_path = utils.get_file_path(region_path, date, method, configuration)
 
-    # Get the latest file
-    files = sorted(os.listdir(f"{region_path}/{year}/{month}/{day}"), reverse=True)
-    if not files:
-        raise ValueError(f"No files found in {region_path}/{year}/{month}/{day}")
+    # Check that the file exists
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
 
-    # Extract the hour from the latest file
-    last_file = files[0]
-    parts = last_file.split("_")
-    if len(parts) < 2:
-        raise ValueError(f"Invalid file format ({last_file})")
-    hour = parts[1].split(".")[0]
+    entities = []
 
-    last_forecast_date = f"{year}-{month}-{day}T{hour}"
+    # Open the NetCDF files and get the entities
+    with xr.open_dataset(file_path) as ds:
+        station_ids = ds.station_ids.values
+        station_official_ids = ds.station_official_ids.values
+        station_names = ds.station_names.values
+        station_x_coords = ds.station_x_coords.values
+        station_y_coords = ds.station_y_coords.values
 
-    # Check that the forecast date is valid
-    _ = utils.convert_to_datetime(last_forecast_date)
+        # Create a list of dictionaries with the entity information
+        for i in range(len(station_ids)):
+            entity = {
+                "id": int(station_ids[i]),
+                "name": str(station_names[i]),
+                "x": float(station_x_coords[i]),
+                "y": float(station_y_coords[i])
+            }
 
-    return last_forecast_date
+            if station_official_ids[i]:
+                entity["official_id"] = str(station_official_ids[i])
+
+            entities.append(entity)
+
+    return entities
 
