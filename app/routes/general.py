@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing_extensions import Annotated
 
 from .. import config
-from app.services.general import get_model_list, get_last_forecast_date_from_files
+from app.services.general import get_method_list, get_last_forecast_date_from_files
 
 router = APIRouter()
 
@@ -14,15 +14,15 @@ def get_settings():
     return config.Settings()
 
 
-@router.get("/{region}/{date}/models", summary="List of available models")
-async def list_models(
+@router.get("/{region}/{date}/methods", summary="List of available methods")
+async def list_methods(
         region: str,
         date: str,
         settings: Annotated[config.Settings, Depends(get_settings)]):
     """
-    Get the list of available models for a given region.
+    Get the list of available methods for a given region.
     """
-    return await _handle_request(get_model_list, settings, region, date=date)
+    return await _handle_request(get_method_list, settings, region, date=date)
 
 
 @router.get("/{region}/last-forecast-date", summary="Last available forecast date")

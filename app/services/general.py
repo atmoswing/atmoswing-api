@@ -6,15 +6,15 @@ import dask
 from ..utils import utils
 
 
-async def get_model_list(data_dir: str, region: str, date: str):
+async def get_method_list(data_dir: str, region: str, date: str):
     """
-    Get the list of available model types for a given region.
+    Get the list of available method types for a given region.
     Simulate async reading by using asyncio to run blocking I/O functions
     """
     region_path = utils.check_region_path(data_dir, region)
-    models = await asyncio.to_thread(_get_models_from_netcdf, region_path, date)
+    methods = await asyncio.to_thread(_get_methods_from_netcdf, region_path, date)
 
-    return {"models": models}
+    return {"methods": methods}
 
 
 async def get_last_forecast_date_from_files(data_dir: str, region: str):
@@ -27,10 +27,37 @@ async def get_last_forecast_date_from_files(data_dir: str, region: str):
     return {"last_forecast_date": last_forecast_date}
 
 
+def _get_methods_from_netcdf(region_path: str, date: str):
+    # Synchronous function to get methods from the NetCDF file
+    if date == 'latest':
+        date = _get_last_forecast_date(region_path)
+
+    files = utils.list_files(region_path, date)
+
+    # Check that the files exist
+    if not files:
+        raise FileNotFoundError(f"No files found for date: {date}")
+
+    methods = []
+
+    # Open the NetCDF files and get the method IDs and names
+    for file in files:
+        with xr.open_dataset(file) as ds:
+            # Skip if already in the list
+            if ds.method_id in [method[0] for method in methods]:
+                continue
+            methods.extend(list(set(zip([ds.method_id], [ds.method_id_display]))))
+
+    # Sort the methods by ID
+    methods.sort(key=lambda x: x[0])
+
+    return methods
+
+
 def _get_last_forecast_date(region_path: str):
     """
     Synchronous function to get the last forecast date from the filenames.
-    Directory structure: region_path/YYYY/MM/DD/YYYY-MM-DD_HH.model.region.nc
+    Directory structure: region_path/YYYY/MM/DD/YYYY-MM-DD_HH.method.region.nc
     """
     def get_latest_subdir(path):
         subdirs = sorted(os.listdir(path), reverse=True)
