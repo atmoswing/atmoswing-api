@@ -17,6 +17,17 @@ async def get_method_list(data_dir: str, region: str, date: str):
     return {"methods": methods}
 
 
+async def get_method_configs_list(data_dir: str, region: str, date: str):
+    """
+    Get the list of available method types and configurations for a given region.
+    Simulate async reading by using asyncio to run blocking I/O functions
+    """
+    region_path = utils.check_region_path(data_dir, region)
+    method_configs = await asyncio.to_thread(_get_method_configs_from_netcdf, region_path, date)
+
+    return {"method_configs": method_configs}
+
+
 async def get_last_forecast_date_from_files(data_dir: str, region: str):
     """
     Get the last available forecast date for a given region.
@@ -43,15 +54,50 @@ def _get_methods_from_netcdf(region_path: str, date: str):
     # Open the NetCDF files and get the method IDs and names
     for file in files:
         with xr.open_dataset(file) as ds:
-            # Skip if already in the list
-            if ds.method_id in [method[0] for method in methods]:
-                continue
-            methods.extend(list(set(zip([ds.method_id], [ds.method_id_display]))))
+            method_id = ds.method_id
+            method_name = ds.method_id_display
+            if not any(method['id'] == method_id for method in methods):
+                methods.append({"id": method_id, "name": method_name})
 
-    # Sort the methods by ID
-    methods.sort(key=lambda x: x[0])
+    methods.sort(key=lambda x: x['id'])
 
     return methods
+
+
+def _get_method_configs_from_netcdf(region_path: str, date: str):
+    # Synchronous function to get method configurations from the NetCDF file
+    if date == 'latest':
+        date = _get_last_forecast_date(region_path)
+
+    files = utils.list_files(region_path, date)
+
+    # Check that the files exist
+    if not files:
+        raise FileNotFoundError(f"No files found for date: {date}")
+
+    method_configs = []
+
+    # Open the NetCDF files and get the method IDs and configurations
+    for file in files:
+        with xr.open_dataset(file) as ds:
+            method_id = ds.method_id
+            method_name = ds.method_id_display
+            config_id = ds.specific_tag
+            config_name = ds.specific_tag_display
+            for method in method_configs:
+                if method['id'] == method_id:
+                    method['configurations'].append(
+                        {"id": config_id, "name": config_name})
+                    break
+            else:
+                method_configs.append(
+                    {"id": method_id, "name": method_name,
+                     "configurations": [{"id": config_id, "name": config_name}]})
+
+    # Sort the method configurations by ID
+    method_configs.sort(key=lambda x: x['id'])
+
+    return method_configs
 
 
 def _get_last_forecast_date(region_path: str):
