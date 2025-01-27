@@ -1,6 +1,6 @@
 import logging
 from fastapi import FastAPI
-from app.routes import general, map, graph
+from atmoswing_api.app.routes import general
 
 # Configure logging
 logging.basicConfig(

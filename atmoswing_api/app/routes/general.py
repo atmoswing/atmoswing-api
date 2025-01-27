@@ -3,8 +3,7 @@ from functools import lru_cache
 from fastapi import APIRouter, HTTPException, Depends
 from typing_extensions import Annotated
 
-from .. import config
-from app.services.general import *
+import config
 
 router = APIRouter()
 

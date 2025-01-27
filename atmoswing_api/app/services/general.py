@@ -1,7 +1,6 @@
 import xarray as xr
 import asyncio
 import os
-import dask
 
 from ..utils import utils
 
