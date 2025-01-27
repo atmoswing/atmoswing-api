@@ -3,7 +3,8 @@ import asyncio
 from unittest.mock import patch, MagicMock
 
 from atmoswing_api.app.services.general import get_last_forecast_date_from_files, \
-    _get_last_forecast_date, get_method_list, _get_methods_from_netcdf
+    _get_last_forecast_date, get_method_list, _get_methods_from_netcdf, \
+    get_method_configs_list
 
 
 @pytest.mark.asyncio
@@ -153,3 +154,73 @@ def test_get_methods_from_netcdf_no_files(mock_list_files):
 
     with pytest.raises(FileNotFoundError, match="No files found for date: 2023-01-01"):
         _get_methods_from_netcdf("/mocked/region/path", "2023-01-01")
+
+
+@pytest.mark.asyncio
+@patch("xarray.open_dataset")
+@patch("atmoswing_api.app.utils.utils.list_files")
+@patch("atmoswing_api.app.utils.utils.check_region_path")
+async def test_get_method_configs_list(
+    mock_check_region_path, mock_list_files, mock_open_dataset
+):
+    # Mock check_region_path to return a mocked path
+    mock_check_region_path.return_value = "/mocked/region/path"
+
+    # Mock list_files to return mocked file paths
+    mock_list_files.return_value = ["/mocked/file1.nc", "/mocked/file2.nc", "/mocked/file3.nc"]
+
+    # Mock NetCDF datasets
+    mock_ds1 = MagicMock()
+    mock_ds1.method_id = 1
+    mock_ds1.method_id_display = "Method A"
+    mock_ds1.specific_tag = "Alpes_Nord"
+    mock_ds1.specific_tag_display = "Alpes du Nord"
+    mock_ds1.__enter__.return_value = mock_ds1  # Handle context manager
+
+    mock_ds2 = MagicMock()
+    mock_ds2.method_id = 2
+    mock_ds2.method_id_display = "Method B"
+    mock_ds2.specific_tag = "Alpes_Nord"
+    mock_ds2.specific_tag_display = "Alpes du Nord"
+    mock_ds2.__enter__.return_value = mock_ds2  # Handle context manager
+
+    mock_ds3 = MagicMock()
+    mock_ds3.method_id = 1
+    mock_ds3.method_id_display = "Method A"
+    mock_ds3.specific_tag = "Alpes_Sud"
+    mock_ds3.specific_tag_display = "Alpes du Sud"
+    mock_ds3.__enter__.return_value = mock_ds3  # Handle context manager
+
+    mock_open_dataset.side_effect = [mock_ds1, mock_ds2, mock_ds3]
+
+    # Call the async function under test
+    result = await get_method_configs_list("/mocked/data/dir", "region1", "2023-01-01")
+
+    print(result)
+
+    # Assert the result
+    expected_result = {
+        "method_configs": [
+            {
+                "id": 1,
+                "name": "Method A",
+                "configurations": [
+                    {"id": "Alpes_Nord", "name": "Alpes du Nord"},
+                    {"id": "Alpes_Sud", "name": "Alpes du Sud"}
+                ],
+            },
+            {
+                "id": 2,
+                "name": "Method B",
+                "configurations": [{"id": "Alpes_Nord", "name": "Alpes du Nord"}],
+            },
+        ]
+    }
+    assert result == expected_result
+
+    # Ensure the mocked methods were called with expected arguments
+    mock_check_region_path.assert_called_once_with("/mocked/data/dir", "region1")
+    mock_list_files.assert_called_once_with("/mocked/region/path", "2023-01-01")
+    mock_open_dataset.assert_any_call("/mocked/file1.nc")
+    mock_open_dataset.assert_any_call("/mocked/file2.nc")
+
