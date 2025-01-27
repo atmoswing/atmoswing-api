@@ -1,0 +1,31 @@
+[project]
+name = "atmoswing-api"
+version = "0.1.0"
+description = "A web forecast API for Atmoswing"
+authors = [
+    { name = "Pascal Horton", email = "pascal.horton@terranum.ch" }
+]
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "xarray",
+    "netCDF4",
+    "pydantic",
+    "pydantic-settings",
+    "python-dotenv",
+    "dask",
+    "pytest",
+    "pytest-asyncio",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
