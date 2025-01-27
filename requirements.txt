@@ -6,3 +6,5 @@ pydantic
 pydantic-settings
 python-dotenv
 dask
+pytest
+pytest-asyncio

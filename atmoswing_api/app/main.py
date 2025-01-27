@@ -19,5 +19,5 @@ app = FastAPI(
 
 # Include the routes
 app.include_router(general.router, prefix="/general", tags=["General Data"])
-app.include_router(map.router, prefix="/map", tags=["Map Data"])
-app.include_router(graph.router, prefix="/graph", tags=["Graph Data"])
+#app.include_router(map.router, prefix="/map", tags=["Map Data"])
+#app.include_router(graph.router, prefix="/graph", tags=["Graph Data"])
