@@ -4,7 +4,7 @@ from unittest.mock import patch, MagicMock
 
 from atmoswing_api.app.services.general import get_last_forecast_date_from_files, \
     _get_last_forecast_date, get_method_list, _get_methods_from_netcdf, \
-    get_method_configs_list
+    get_method_configs_list, get_entities_list
 
 
 @pytest.mark.asyncio
@@ -193,10 +193,7 @@ async def test_get_method_configs_list(
 
     mock_open_dataset.side_effect = [mock_ds1, mock_ds2, mock_ds3]
 
-    # Call the async function under test
     result = await get_method_configs_list("/mocked/data/dir", "region1", "2023-01-01")
-
-    print(result)
 
     # Assert the result
     expected_result = {
@@ -224,3 +221,73 @@ async def test_get_method_configs_list(
     mock_open_dataset.assert_any_call("/mocked/file1.nc")
     mock_open_dataset.assert_any_call("/mocked/file2.nc")
 
+
+@pytest.mark.asyncio
+@patch("atmoswing_api.app.utils.utils.check_region_path")
+@patch("atmoswing_api.app.utils.utils.get_file_path")
+@patch("xarray.open_dataset")
+@patch("os.path.exists")
+async def test_get_entities_list(
+    mock_exists, mock_open_dataset, mock_get_file_path, mock_check_region_path
+):
+    # Mock inputs
+    data_dir = "/mocked/data/dir"
+    region = "region1"
+    date = "2023-01-01"
+    method = "method1"
+    configuration = "config1"
+
+    # Mocked outputs
+    region_path = "/mocked/region/path"
+    file_path = "/mocked/region/path/2023-01-01_method1_config1.nc"
+
+    # Mock the utils functions
+    mock_check_region_path.return_value = region_path
+    mock_get_file_path.return_value = file_path
+    mock_exists.return_value = True
+
+    # Mock the NetCDF dataset content
+    mock_ds = MagicMock()
+    mock_ds.station_ids.values = [1, 2, 3]
+    mock_ds.station_official_ids.values = ["official1", "official2", None]
+    mock_ds.station_names.values = ["Station A", "Station B", "Station C"]
+    mock_ds.station_x_coords.values = [100.0, 200.0, 300.0]
+    mock_ds.station_y_coords.values = [400.0, 500.0, 600.0]
+    mock_ds.__enter__.return_value = mock_ds  # Handle context manager
+    mock_open_dataset.return_value = mock_ds
+
+    # Call the async function under test
+    result = await get_entities_list(data_dir, region, date, method, configuration)
+
+    # Expected result
+    expected_result = {
+        "entities": [
+            {
+                "id": 1,
+                "name": "Station A",
+                "x": 100.0,
+                "y": 400.0,
+                "official_id": "official1",
+            },
+            {
+                "id": 2,
+                "name": "Station B",
+                "x": 200.0,
+                "y": 500.0,
+                "official_id": "official2",
+            },
+            {
+                "id": 3,
+                "name": "Station C",
+                "x": 300.0,
+                "y": 600.0,
+            },
+        ]
+    }
+
+    # Assertions
+    assert result == expected_result
+    mock_check_region_path.assert_called_once_with(data_dir, region)
+    mock_get_file_path.assert_called_once_with(region_path, date, method, configuration)
+    mock_exists.assert_called_once_with(file_path)
+    mock_open_dataset.assert_called_once_with(file_path)
