@@ -7,7 +7,7 @@ from typing import List
 import config
 from app.services.meta import get_last_forecast_date_from_files, \
     get_method_list, get_method_configs_list, get_entities_list
-from app.models.meta import Entity, Method, MethodConfigsResponse
+from app.models.meta import Entity, Method, MethodConfig
 
 router = APIRouter()
 
@@ -40,43 +40,46 @@ async def get_last_forecast_date(
     return await _handle_request(get_last_forecast_date_from_files, settings, region)
 
 
-@router.get("/{region}/{date}/methods",
+@router.get("/{region}/{forecast_date}/methods",
             summary="List of available methods",
             response_model=List[Method])
 async def list_methods(
         region: str,
-        date: str,
+        forecast_date: str,
         settings: Annotated[config.Settings, Depends(get_settings)]):
     """
     Get the list of available methods for a given region.
     """
-    return await _handle_request(get_method_list, settings, region, date=date)
+    return await _handle_request(get_method_list, settings, region,
+                                 forecast_date=forecast_date)
 
 
-@router.get("/{region}/{date}/methods-and-configs",
+@router.get("/{region}/{forecast_date}/methods-and-configs",
             summary="List of available methods and configurations",
-            response_model=MethodConfigsResponse)
+            response_model=List[MethodConfig])
 async def list_methods_and_configs(
         region: str,
-        date: str,
+        forecast_date: str,
         settings: Annotated[config.Settings, Depends(get_settings)]):
     """
-    Get the list of available methods for a given region.
+    Get the list of available methods and configs for a given region.
     """
-    return await _handle_request(get_method_configs_list, settings, region, date=date)
+    return await _handle_request(get_method_configs_list, settings, region,
+                                 forecast_date=forecast_date)
 
 
-@router.get("/{region}/{date}/{method}/{configuration}/entities",
+@router.get("/{region}/{forecast_date}/{method}/{configuration}/entities",
             summary="List of available entities",
             response_model=List[Entity])
 async def list_entities(
         region: str,
-        date: str,
+        forecast_date: str,
         method: str,
         configuration: str,
         settings: Annotated[config.Settings, Depends(get_settings)]):
     """
-    Get the list of available entities for a given region, date, method, and configuration.
+    Get the list of available entities for a given region, forecast_date, method, and configuration.
     """
-    return await _handle_request(get_entities_list, settings, region, date=date,
-                                 method=method, configuration=configuration)
+    return await _handle_request(get_entities_list, settings, region,
+                                 forecast_date=forecast_date, method=method,
+                                 configuration=configuration)

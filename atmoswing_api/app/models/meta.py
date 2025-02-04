@@ -15,9 +15,6 @@ class MethodConfig(BaseModel):
     name: str
     configurations: List[Configuration]
 
-class MethodConfigsResponse(BaseModel):
-    method_configs: List[MethodConfig]
-
 class Entity(BaseModel):
     id: int
     name: str
