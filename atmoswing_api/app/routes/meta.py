@@ -2,10 +2,12 @@ import logging
 from functools import lru_cache
 from fastapi import APIRouter, HTTPException, Depends
 from typing_extensions import Annotated
+from typing import List
 
 import config
-from atmoswing_api.app.services.meta import get_last_forecast_date_from_files, \
+from app.services.meta import get_last_forecast_date_from_files, \
     get_method_list, get_method_configs_list, get_entities_list
+from app.models.meta import Entity, Method, MethodConfigsResponse
 
 router = APIRouter()
 
@@ -39,7 +41,8 @@ async def get_last_forecast_date(
 
 
 @router.get("/{region}/{date}/methods",
-            summary="List of available methods")
+            summary="List of available methods",
+            response_model=List[Method])
 async def list_methods(
         region: str,
         date: str,
@@ -51,7 +54,8 @@ async def list_methods(
 
 
 @router.get("/{region}/{date}/methods-and-configs",
-            summary="List of available methods and configurations")
+            summary="List of available methods and configurations",
+            response_model=MethodConfigsResponse)
 async def list_methods_and_configs(
         region: str,
         date: str,
@@ -63,7 +67,8 @@ async def list_methods_and_configs(
 
 
 @router.get("/{region}/{date}/{method}/{configuration}/entities",
-            summary="List of available entities")
+            summary="List of available entities",
+            response_model=List[Entity])
 async def list_entities(
         region: str,
         date: str,

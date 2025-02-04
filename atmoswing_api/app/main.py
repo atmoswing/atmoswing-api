@@ -1,6 +1,6 @@
 import logging
 from fastapi import FastAPI
-from atmoswing_api.app.routes import meta
+from app.routes import meta, forecasts, aggregations
 
 # Configure logging
 logging.basicConfig(
@@ -19,5 +19,5 @@ app = FastAPI(
 
 # Include the routes
 app.include_router(meta.router, prefix="/meta", tags=["Metadata"])
-#app.include_router(map.router, prefix="/map", tags=["Map Data"])
-#app.include_router(graph.router, prefix="/graph", tags=["Graph Data"])
+app.include_router(forecasts.router, prefix="/forecasts", tags=["Forecast data for a given method and entity"])
+app.include_router(aggregations.router, prefix="/aggregations", tags=["Aggregated forecast data"])
