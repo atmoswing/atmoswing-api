@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing_extensions import Annotated
 
 import config
-from atmoswing_api.app.services.general import get_last_forecast_date_from_files, \
+from atmoswing_api.app.services.meta import get_last_forecast_date_from_files, \
     get_method_list, get_method_configs_list, get_entities_list
 
 router = APIRouter()
@@ -51,7 +51,7 @@ async def list_methods(
 
 
 @router.get("/{region}/{date}/methods-and-configs",
-            summary="List of available methods")
+            summary="List of available methods and configurations")
 async def list_methods_and_configs(
         region: str,
         date: str,

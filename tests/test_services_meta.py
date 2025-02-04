@@ -2,13 +2,13 @@ import pytest
 import asyncio
 from unittest.mock import patch, MagicMock
 
-from atmoswing_api.app.services.general import get_last_forecast_date_from_files, \
+from atmoswing_api.app.services.meta import get_last_forecast_date_from_files, \
     _get_last_forecast_date, get_method_list, _get_methods_from_netcdf, \
     get_method_configs_list, get_entities_list
 
 
 @pytest.mark.asyncio
-@patch("atmoswing_api.app.services.general._get_last_forecast_date")
+@patch("atmoswing_api.app.services.meta._get_last_forecast_date")
 @patch("atmoswing_api.app.utils.utils.check_region_path")
 async def test_get_last_forecast_date_from_files(mock_check_region_path, mock_get_last_forecast_date):
     # Mock check_region_path
@@ -101,7 +101,7 @@ def test_get_last_forecast_date_invalid_datetime_format(mock_listdir):
 
 
 @pytest.mark.asyncio
-@patch("atmoswing_api.app.services.general._get_methods_from_netcdf")
+@patch("atmoswing_api.app.services.meta._get_methods_from_netcdf")
 @patch("atmoswing_api.app.utils.utils.check_region_path")
 async def test_get_method_list(mock_check_region_path, mock_get_methods):
     # Mock check_region_path
