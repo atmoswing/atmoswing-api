@@ -22,8 +22,17 @@ def convert_to_datetime(datetime_str: str) -> datetime:
     try:
         return datetime.strptime(datetime_str, "%Y-%m-%dT%H")
     except ValueError:
-        raise ValueError(f"Invalid datetime format ({datetime_str})")
+        dt = convert_to_date(datetime_str)
+        return datetime(dt.year, dt.month, dt.day)
 
+def convert_to_mjd(date_str: str) -> float:
+    try:
+        dt = convert_to_datetime(date_str)
+    except ValueError:
+        dt = convert_to_date(date_str)
+        dt = datetime(dt.year, dt.month, dt.day)
+    mjd = (dt - datetime(1858, 11, 17)).total_seconds() / 86400.0
+    return mjd
 
 def get_files_pattern(region_path: str, datetime_str: str) -> str:
     dt = convert_to_datetime(datetime_str)

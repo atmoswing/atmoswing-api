@@ -21,10 +21,8 @@ async def get_method_list(data_dir: str, region: str, forecast_date: str):
     Simulate async reading by using asyncio to run blocking I/O functions
     """
     region_path = utils.check_region_path(data_dir, region)
-    methods = await asyncio.to_thread(_get_methods_from_netcdf, region_path,
-                                      forecast_date)
-
-    return {"methods": methods}
+    return await asyncio.to_thread(_get_methods_from_netcdf, region_path,
+                                   forecast_date)
 
 
 async def get_method_configs_list(data_dir: str, region: str, forecast_date: str):
@@ -33,10 +31,8 @@ async def get_method_configs_list(data_dir: str, region: str, forecast_date: str
     Simulate async reading by using asyncio to run blocking I/O functions
     """
     region_path = utils.check_region_path(data_dir, region)
-    method_configs = await asyncio.to_thread(_get_method_configs_from_netcdf,
-                                             region_path, forecast_date)
-
-    return {"method_configs": method_configs}
+    return await asyncio.to_thread(_get_method_configs_from_netcdf, region_path,
+                                   forecast_date)
 
 
 async def get_entities_list(data_dir: str, region: str, forecast_date: str, method: str,
@@ -45,10 +41,8 @@ async def get_entities_list(data_dir: str, region: str, forecast_date: str, meth
     Get the list of available entities for a given region, forecast_date, method, and configuration.
     """
     region_path = utils.check_region_path(data_dir, region)
-    entities = await asyncio.to_thread(_get_entities_from_netcdf, region_path,
-                                       forecast_date, method, configuration)
-
-    return {"entities": entities}
+    return await asyncio.to_thread(_get_entities_from_netcdf, region_path,
+                                   forecast_date, method, configuration)
 
 
 def _get_last_forecast_date(region_path: str):
@@ -156,9 +150,8 @@ def _get_entities_from_netcdf(region_path: str, forecast_date: str, method: str,
     if forecast_date == 'latest':
         forecast_date = _get_last_forecast_date(region_path)
 
-    files = utils.list_files(region_path, forecast_date)
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
-    if file_path not in files:
+    if not os.path.exists(file_path):
         raise FileNotFoundError(f"File not found: {file_path}")
 
     entities = []
