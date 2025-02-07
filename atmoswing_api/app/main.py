@@ -19,5 +19,5 @@ app = FastAPI(
 
 # Include the routes
 app.include_router(meta.router, prefix="/meta", tags=["Metadata"])
-app.include_router(forecasts.router, prefix="/forecasts", tags=["Forecast data for a given method and entity"])
+app.include_router(forecasts.router, prefix="/forecasts", tags=["Data from a single forecast"])
 app.include_router(aggregations.router, prefix="/aggregations", tags=["Aggregated forecast data"])

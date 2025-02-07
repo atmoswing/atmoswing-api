@@ -4,8 +4,8 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing_extensions import Annotated
 
 import config
-from app.models.forecast import AnalogValues
-from app.services.forecasts import get_analog_values
+from app.models.forecast import AnalogValues, AnalogDates
+from app.services.forecasts import get_analog_values, get_analog_dates
 
 router = APIRouter()
 
@@ -27,7 +27,7 @@ async def _handle_request(func, settings: config.Settings, region: str, **kwargs
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
-@router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/{target_date}",
+@router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/{target_date}/values",
             summary="Analog values for a given entity",
             response_model=AnalogValues)
 async def analog_values(
@@ -45,3 +45,20 @@ async def analog_values(
                                  forecast_date=forecast_date, method=method,
                                  configuration=configuration, entity=entity,
                                  target_date=target_date)
+
+@router.get("/{region}/{forecast_date}/{method}/{configuration}/{target_date}/dates",
+            summary="Analog dates for a given forecast",
+            response_model=AnalogDates)
+async def analog_dates(
+        region: str,
+        forecast_date: str,
+        method: str,
+        configuration: str,
+        target_date: str,
+        settings: Annotated[config.Settings, Depends(get_settings)]):
+    """
+    Get the analog dates for a given region, forecast_date, method, configuration, and target_date.
+    """
+    return await _handle_request(get_analog_dates, settings, region,
+                                 forecast_date=forecast_date, method=method,
+                                 configuration=configuration, target_date=target_date)
