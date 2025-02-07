@@ -26,30 +26,41 @@ def _get_analog_values(region_path: str, forecast_date: str, method: str,
         raise FileNotFoundError(f"File not found: {file_path}")
 
     with xr.open_dataset(file_path) as ds:
-        # Find the entity ID
-        station_ids = ds.station_ids.values
-        indices = np.where(station_ids == entity)[0]
-        entity_idx = int(indices[0]) if indices.size > 0 else -1
-        if entity_idx == -1:
-            raise ValueError(f"Entity not found: {entity}")
-
-        # Find the lead time
-        target_dates = ds.target_dates.values
-        target_date = utils.convert_to_datetime(target_date)
-        target_date_idx = -1
-        for i, date in enumerate(target_dates):
-            date = np.datetime64(date).astype('datetime64[s]').item()
-            if date == target_date:
-                target_date_idx = i
-                break
-
-        # Get the start and end indices for the entity
-        analogs_nb = ds.analogs_nb.values
-        start_idx = int(np.sum(analogs_nb[:target_date_idx]))
-        end_idx = start_idx + int(analogs_nb[target_date_idx])
-
-        values = np.around(
-            ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(float),
-            decimals=1).tolist()
+        entity_idx = _get_entity_index(ds, entity)
+        start_idx, end_idx = _get_row_indices(ds, target_date)
+        values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
+            float).values.tolist()
 
     return {"values": values}
+
+
+def _get_row_indices(ds, target_date):
+    # Get the start and end indices for the entity
+    target_date_idx = _get_target_date_index(ds, target_date)
+    analogs_nb = ds.analogs_nb.values
+    start_idx = int(np.sum(analogs_nb[:target_date_idx]))
+    end_idx = start_idx + int(analogs_nb[target_date_idx])
+    return start_idx, end_idx
+
+
+def _get_target_date_index(ds, target_date):
+    # Find the lead time
+    target_dates = ds.target_dates.values
+    target_date = utils.convert_to_datetime(target_date)
+    target_date_idx = -1
+    for i, date in enumerate(target_dates):
+        date = np.datetime64(date).astype('datetime64[s]').item()
+        if date == target_date:
+            target_date_idx = i
+            break
+    return target_date_idx
+
+
+def _get_entity_index(ds, entity):
+    # Find the entity ID
+    station_ids = ds.station_ids.values
+    indices = np.where(station_ids == entity)[0]
+    entity_idx = int(indices[0]) if indices.size > 0 else -1
+    if entity_idx == -1:
+        raise ValueError(f"Entity not found: {entity}")
+    return entity_idx
