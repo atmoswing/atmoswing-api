@@ -10,7 +10,7 @@ from atmoswing_api.app.services.meta import get_last_forecast_date_from_files, \
 @pytest.mark.asyncio
 @patch("atmoswing_api.app.services.meta._get_last_forecast_date")
 @patch("atmoswing_api.app.utils.utils.check_region_path")
-async def test_get_last_forecast_date_from_files(mock_check_region_path, mock_get_last_forecast_date):
+async def test_get_last_forecast_date_from_files_mock(mock_check_region_path, mock_get_last_forecast_date):
     # Mock check_region_path
     mock_check_region_path.return_value = "/mocked/region/path"
 
@@ -24,9 +24,16 @@ async def test_get_last_forecast_date_from_files(mock_check_region_path, mock_ge
     mock_get_last_forecast_date.assert_called_once_with("/mocked/region/path")
 
 
+@pytest.mark.asyncio
+async def test_get_last_forecast_date_from_files():
+    result = await get_last_forecast_date_from_files("./data", "adn")
+
+    assert result == {"last_forecast_date": "2024-10-06T18"}
+
+
 @patch("os.listdir")
 @patch("atmoswing_api.app.utils.utils.convert_to_datetime")
-def test_get_last_forecast_date(mock_convert_to_datetime, mock_listdir):
+def test_get_last_forecast_date_mock(mock_convert_to_datetime, mock_listdir):
     # Mock os.listdir for each directory level
     mock_listdir.side_effect = [
         ["2023"],
@@ -96,14 +103,14 @@ def test_get_last_forecast_date_invalid_datetime_format(mock_listdir):
         ["invalid_file_name.nc"]  # Invalid file format
     ]
 
-    with pytest.raises(ValueError, match="Invalid datetime format"):
+    with pytest.raises(ValueError, match="Invalid date format"):
         _get_last_forecast_date("/mocked/region/path")
 
 
 @pytest.mark.asyncio
 @patch("atmoswing_api.app.services.meta._get_methods_from_netcdf")
 @patch("atmoswing_api.app.utils.utils.check_region_path")
-async def test_get_method_list(mock_check_region_path, mock_get_methods):
+async def test_get_method_list_mock(mock_check_region_path, mock_get_methods):
     # Mock check_region_path
     mock_check_region_path.return_value = "/mocked/region/path"
 
@@ -115,15 +122,23 @@ async def test_get_method_list(mock_check_region_path, mock_get_methods):
 
     result = await get_method_list("/mocked/data_dir", "region", "2023-01-01")
 
-    assert result == {
-        "methods": [{"id": 1, "name": "Method A"}, {"id": 2, "name": "Method B"}]}
+    assert result == [{"id": 1, "name": "Method A"}, {"id": 2, "name": "Method B"}]
     mock_check_region_path.assert_called_once_with("/mocked/data_dir", "region")
     mock_get_methods.assert_called_once_with("/mocked/region/path", "2023-01-01")
 
 
+@pytest.mark.asyncio
+async def test_get_method_list():
+    result = await get_method_list("./data", "adn", "2024-10-05")
+
+    assert result[0] == {'id': '2Z-06h-ARP', 'name': 'Analogie circulation (2Z) 6h ARP'}
+    assert result[1] == {'id': '2Z-06h-CEP', 'name': 'Analogie circulation (2Z) 6h CEP'}
+    assert result[7] == {'id': '4Zo-CEP', 'name': 'Analogie circulation (4Zo) CEP'}
+
+
 @patch("atmoswing_api.app.utils.utils.list_files")
 @patch("xarray.open_dataset")
-def test_get_methods_from_netcdf(mock_open_dataset, mock_list_files):
+def test_get_methods_from_netcdf_mock(mock_open_dataset, mock_list_files):
     # Mock list_files
     mock_list_files.return_value = ["/mocked/file1.nc", "/mocked/file2.nc"]
 
@@ -160,7 +175,7 @@ def test_get_methods_from_netcdf_no_files(mock_list_files):
 @patch("xarray.open_dataset")
 @patch("atmoswing_api.app.utils.utils.list_files")
 @patch("atmoswing_api.app.utils.utils.check_region_path")
-async def test_get_method_configs_list(
+async def test_get_method_configs_list_mock(
     mock_check_region_path, mock_list_files, mock_open_dataset
 ):
     # Mock check_region_path to return a mocked path
@@ -196,23 +211,21 @@ async def test_get_method_configs_list(
     result = await get_method_configs_list("/mocked/data/dir", "region1", "2023-01-01")
 
     # Assert the result
-    expected_result = {
-        "method_configs": [
-            {
-                "id": 1,
-                "name": "Method A",
-                "configurations": [
-                    {"id": "Alpes_Nord", "name": "Alpes du Nord"},
-                    {"id": "Alpes_Sud", "name": "Alpes du Sud"}
-                ],
-            },
-            {
-                "id": 2,
-                "name": "Method B",
-                "configurations": [{"id": "Alpes_Nord", "name": "Alpes du Nord"}],
-            },
-        ]
-    }
+    expected_result = [
+        {
+            "id": 1,
+            "name": "Method A",
+            "configurations": [
+                {"id": "Alpes_Nord", "name": "Alpes du Nord"},
+                {"id": "Alpes_Sud", "name": "Alpes du Sud"}
+            ],
+        },
+        {
+            "id": 2,
+            "name": "Method B",
+            "configurations": [{"id": "Alpes_Nord", "name": "Alpes du Nord"}],
+        },
+    ]
     assert result == expected_result
 
     # Ensure the mocked methods were called with expected arguments
@@ -223,11 +236,28 @@ async def test_get_method_configs_list(
 
 
 @pytest.mark.asyncio
+async def test_get_method_configs_list():
+    result = await get_method_configs_list("./data", "adn", "2024-10-05")
+
+    assert result[0] == {
+        'configurations': [
+            {'id': 'Alpes_Nord', 'name': 'Alpes du Nord'}
+        ],
+        'id': '2Z-06h-ARP', 'name': 'Analogie circulation (2Z) 6h ARP'}
+    assert result[6] == {
+        'configurations': [
+            {'id': 'Alpes_Nord', 'name': 'Alpes du Nord'},
+            {'id': 'Alpes_Sud', 'name': 'Alpes du Sud'}
+        ],
+        'id': '4Zo-ARPEGE', 'name': 'Analogie circulation (4Zo) ARPEGE'}
+
+
+@pytest.mark.asyncio
 @patch("atmoswing_api.app.utils.utils.check_region_path")
 @patch("atmoswing_api.app.utils.utils.get_file_path")
 @patch("xarray.open_dataset")
 @patch("os.path.exists")
-async def test_get_entities_list(
+async def test_get_entities_list_mock(
     mock_exists, mock_open_dataset, mock_get_file_path, mock_check_region_path
 ):
     # Mock inputs
@@ -260,30 +290,28 @@ async def test_get_entities_list(
     result = await get_entities_list(data_dir, region, date, method, configuration)
 
     # Expected result
-    expected_result = {
-        "entities": [
-            {
-                "id": 1,
-                "name": "Station A",
-                "x": 100.0,
-                "y": 400.0,
-                "official_id": "official1",
-            },
-            {
-                "id": 2,
-                "name": "Station B",
-                "x": 200.0,
-                "y": 500.0,
-                "official_id": "official2",
-            },
-            {
-                "id": 3,
-                "name": "Station C",
-                "x": 300.0,
-                "y": 600.0,
-            },
-        ]
-    }
+    expected_result = [
+        {
+            "id": 1,
+            "name": "Station A",
+            "x": 100.0,
+            "y": 400.0,
+            "official_id": "official1",
+        },
+        {
+            "id": 2,
+            "name": "Station B",
+            "x": 200.0,
+            "y": 500.0,
+            "official_id": "official2",
+        },
+        {
+            "id": 3,
+            "name": "Station C",
+            "x": 300.0,
+            "y": 600.0,
+        },
+    ]
 
     # Assertions
     assert result == expected_result
@@ -291,3 +319,31 @@ async def test_get_entities_list(
     mock_get_file_path.assert_called_once_with(region_path, date, method, configuration)
     mock_exists.assert_called_once_with(file_path)
     mock_open_dataset.assert_called_once_with(file_path)
+
+
+@pytest.mark.asyncio
+async def test_get_entities_list():
+    # Mock inputs
+    data_dir = "./data"
+    region = "adn"
+    date = "2024-10-05T00"
+    method = "4Zo-GFS"
+    configuration = "Alpes_Nord"
+
+    # Call the async function under test
+    result = await get_entities_list(data_dir, region, date, method, configuration)
+
+    # Assertions
+    assert result[0] == {
+        "id": 1,
+        "name": "Arly",
+        "x": 973795,
+        "y": 6524123
+    }
+
+    assert result[5] == {
+        "id": 6,
+        "name": "Haute Maurienne",
+        "x": 1006560,
+        "y": 6473617
+    }
