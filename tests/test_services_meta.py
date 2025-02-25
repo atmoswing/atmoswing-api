@@ -1,5 +1,4 @@
 import pytest
-import asyncio
 from unittest.mock import patch, MagicMock
 
 from atmoswing_api.app.services.meta import get_last_forecast_date_from_files, \
@@ -129,11 +128,10 @@ async def test_get_method_list_mock(mock_check_region_path, mock_get_methods):
 
 @pytest.mark.asyncio
 async def test_get_method_list():
-    result = await get_method_list("./data", "adn", "2024-10-05")
+    result = await get_method_list("./data", "adn", "2024-10-06")
 
-    assert result[0] == {'id': '2Z-06h-ARP', 'name': 'Analogie circulation (2Z) 6h ARP'}
-    assert result[1] == {'id': '2Z-06h-CEP', 'name': 'Analogie circulation (2Z) 6h CEP'}
-    assert result[7] == {'id': '4Zo-CEP', 'name': 'Analogie circulation (4Zo) CEP'}
+    assert result[0] == {'id': '2Z-06h-GFS', 'name': 'Analogie circulation (2Z) 6h GFS'}
+    assert result[5] == {'id': '4Zo-CEP', 'name': 'Analogie circulation (4Zo) CEP'}
 
 
 @patch("atmoswing_api.app.utils.utils.list_files")
@@ -237,19 +235,19 @@ async def test_get_method_configs_list_mock(
 
 @pytest.mark.asyncio
 async def test_get_method_configs_list():
-    result = await get_method_configs_list("./data", "adn", "2024-10-05")
+    result = await get_method_configs_list("./data", "adn", "2024-10-06")
 
     assert result[0] == {
         'configurations': [
             {'id': 'Alpes_Nord', 'name': 'Alpes du Nord'}
         ],
-        'id': '2Z-06h-ARP', 'name': 'Analogie circulation (2Z) 6h ARP'}
+        'id': '2Z-06h-GFS', 'name': 'Analogie circulation (2Z) 6h GFS'}
     assert result[6] == {
         'configurations': [
             {'id': 'Alpes_Nord', 'name': 'Alpes du Nord'},
             {'id': 'Alpes_Sud', 'name': 'Alpes du Sud'}
         ],
-        'id': '4Zo-ARPEGE', 'name': 'Analogie circulation (4Zo) ARPEGE'}
+        'id': '4Zo-GFS', 'name': 'Analogie circulation (4Zo) GFS'}
 
 
 @pytest.mark.asyncio
