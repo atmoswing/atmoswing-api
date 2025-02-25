@@ -13,3 +13,7 @@ class AnalogValues(BaseModel):
 
 class AnalogDates(BaseModel):
     dates: List[datetime]
+
+
+class AnalogCriteria(BaseModel):
+    criteria: List[float]

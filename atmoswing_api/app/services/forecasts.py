@@ -6,6 +6,27 @@ import asyncio
 
 from ..utils import utils
 
+
+async def get_analog_dates(data_dir: str, region: str, forecast_date: str, method: str,
+                           configuration: str, target_date: str):
+    """
+    Get the analog dates for a given region, date, method, configuration, and target date.
+    """
+    region_path = utils.check_region_path(data_dir, region)
+    return await asyncio.to_thread(_get_analog_dates, region_path, forecast_date,
+                                   method, configuration, target_date)
+
+
+async def get_analog_criteria(data_dir: str, region: str, forecast_date: str,
+                              method: str, configuration: str, target_date: str):
+    """
+    Get the analog criteria for a given region, date, method, configuration, and target date.
+    """
+    region_path = utils.check_region_path(data_dir, region)
+    return await asyncio.to_thread(_get_analog_criteria, region_path, forecast_date,
+                                   method, configuration, target_date)
+
+
 async def get_analog_values(data_dir: str, region: str, forecast_date: str, method: str,
                             configuration: str, entity: int, target_date: str):
     """
@@ -16,14 +37,38 @@ async def get_analog_values(data_dir: str, region: str, forecast_date: str, meth
                                    method, configuration, entity, target_date)
 
 
-async def get_analog_dates(data_dir: str, region: str, forecast_date: str, method: str,
-                           configuration: str, target_date: str):
+def _get_analog_dates(region_path: str, forecast_date: str, method: str,
+                      configuration: str, target_date: str):
     """
-    Get the analog dates for a given region, date, method, configuration, and target date.
+    Synchronous function to get the analog dates from the netCDF file.
     """
-    region_path = utils.check_region_path(data_dir, region)
-    return await asyncio.to_thread(_get_analog_dates, region_path, forecast_date,
-                                   method, configuration, target_date)
+    file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+
+    with xr.open_dataset(file_path) as ds:
+        start_idx, end_idx = _get_row_indices(ds, target_date)
+        analog_dates = [date.astype('datetime64[s]').item() for date in
+                        ds.analog_dates.values[start_idx:end_idx]]
+
+    return {"dates": analog_dates}
+
+
+def _get_analog_criteria(region_path: str, forecast_date: str, method: str,
+                         configuration: str, target_date: str):
+    """
+    Synchronous function to get the analog criteria from the netCDF file.
+    """
+    file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+
+    with (xr.open_dataset(file_path) as ds):
+        start_idx, end_idx = _get_row_indices(ds, target_date)
+        analog_criteria = ds.analog_criteria[start_idx:end_idx].astype(
+            float).values.tolist()
+
+    return {"criteria": analog_criteria}
 
 
 def _get_analog_values(region_path: str, forecast_date: str, method: str,
@@ -42,23 +87,6 @@ def _get_analog_values(region_path: str, forecast_date: str, method: str,
             float).values.tolist()
 
     return {"values": values}
-
-
-def _get_analog_dates(region_path: str, forecast_date: str, method: str,
-                      configuration: str, target_date: str):
-    """
-    Synchronous function to get the analog dates from the netCDF file.
-    """
-    file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
-
-    with xr.open_dataset(file_path) as ds:
-        start_idx, end_idx = _get_row_indices(ds, target_date)
-        analog_dates = [date.astype('datetime64[s]').item() for date in
-                        ds.analog_dates.values[start_idx:end_idx]]
-
-    return {"dates": analog_dates}
 
 
 def _get_row_indices(ds, target_date):
