@@ -3,12 +3,31 @@ from typing import List
 from datetime import datetime
 
 
+class Analog(BaseModel):
+    date: datetime
+    value: float
+    criteria: float
+    rank: int
+
+    @field_validator("value")
+    def round_value(cls, v: float) -> float:
+        return round(float(v), 2)
+
+    @field_validator("criteria")
+    def round_criteria(cls, v: float) -> float:
+        return round(float(v), 3)
+
+
+class Analogs(BaseModel):
+    analogs: List[Analog]
+
+
 class AnalogValues(BaseModel):
     values: List[float]
 
     @field_validator("values")
     def round_values(cls, v: List[float]) -> List[float]:
-        return [round(float(value), 1) for value in v]
+        return [round(float(value), 2) for value in v]
 
 
 class AnalogDates(BaseModel):
@@ -17,3 +36,15 @@ class AnalogDates(BaseModel):
 
 class AnalogCriteria(BaseModel):
     criteria: List[float]
+
+    @field_validator("criteria")
+    def round_criteria(cls, v: List[float]) -> List[float]:
+        return [round(float(value), 3) for value in v]
+
+
+class SeriesAnalogValues(BaseModel):
+    series_values: List[List[float]]
+
+    @field_validator("series_values")
+    def round_series(cls, v: List[List[float]]) -> List[List[float]]:
+        return [[round(float(value), 2) for value in series] for series in v]

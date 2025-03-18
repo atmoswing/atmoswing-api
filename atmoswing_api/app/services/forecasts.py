@@ -7,6 +7,16 @@ import asyncio
 from ..utils import utils
 
 
+async def get_analogs(data_dir: str, region: str, forecast_date: str, method: str,
+                      configuration: str, entity: int, target_date: str):
+        """
+        Get the analogs for a given region, forecast date, method, configuration, entity, and target date.
+        """
+        region_path = utils.check_region_path(data_dir, region)
+        return await asyncio.to_thread(_get_analogs, region_path, forecast_date, method,
+                                     configuration, entity, target_date)
+
+
 async def get_analog_dates(data_dir: str, region: str, forecast_date: str, method: str,
                            configuration: str, target_date: str):
     """
@@ -35,6 +45,43 @@ async def get_analog_values(data_dir: str, region: str, forecast_date: str, meth
     region_path = utils.check_region_path(data_dir, region)
     return await asyncio.to_thread(_get_analog_values, region_path, forecast_date,
                                    method, configuration, entity, target_date)
+
+
+async def get_series_analog_values_best(data_dir: str, region: str, forecast_date: str,
+                                        method: str, configuration: str, entity: int,
+                                        number: int):
+    """
+    Get the time series of the best analog values for a given region, date, method, configuration, and entity.
+    """
+    region_path = utils.check_region_path(data_dir, region)
+    return await asyncio.to_thread(_get_series_analog_values_best, region_path,
+                                   forecast_date, method, configuration, entity, number)
+
+
+def _get_analogs(region_path: str, forecast_date: str, method: str, configuration: str,
+                 entity: int, target_date: str):
+    """
+    Synchronous function to get the analogs from the netCDF file.
+    """
+    file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+
+    with xr.open_dataset(file_path) as ds:
+        entity_idx = _get_entity_index(ds, entity)
+        start_idx, end_idx = _get_row_indices(ds, target_date)
+        analog_dates = [date.astype('datetime64[s]').item() for date in
+                        ds.analog_dates.values[start_idx:end_idx]]
+        analog_criteria = ds.analog_criteria[start_idx:end_idx].astype(
+            float).values.tolist()
+        values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
+            float).values.tolist()
+        ranks = list(range(1, len(analog_dates) + 1))
+        analogs = [{"date": date, "criteria": criteria, "value": value, "rank": rank}
+                     for date, criteria, value, rank in
+                        zip(analog_dates, analog_criteria, values, ranks)]
+
+    return {"analogs": analogs}
 
 
 def _get_analog_dates(region_path: str, forecast_date: str, method: str,
@@ -89,6 +136,29 @@ def _get_analog_values(region_path: str, forecast_date: str, method: str,
     return {"values": values}
 
 
+def _get_series_analog_values_best(region_path: str, forecast_date: str, method: str,
+                                   configuration: str, entity: int, number: int):
+    """
+    Synchronous function to get the time series of the best analog values from the netCDF file.
+    """
+    file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+
+    with xr.open_dataset(file_path) as ds:
+        series_values = []
+        entity_idx = _get_entity_index(ds, entity)
+        analogs_nb = ds.analogs_nb.values
+        for idx in range(len(analogs_nb)):
+            start_idx = int(np.sum(analogs_nb[:idx]))
+            end_idx = start_idx + min(number, int(analogs_nb[idx]))
+            values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
+                float).values.tolist()
+            series_values.append(values)
+
+    return {"series_values": series_values}
+
+
 def _get_row_indices(ds, target_date):
     # Get the start and end indices for the entity
     target_date_idx = _get_target_date_index(ds, target_date)
@@ -119,3 +189,4 @@ def _get_entity_index(ds, entity):
     if entity_idx == -1:
         raise ValueError(f"Entity not found: {entity}")
     return entity_idx
+
