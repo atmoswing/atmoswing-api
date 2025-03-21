@@ -7,20 +7,33 @@ import asyncio
 from ..utils import utils
 
 
+async def get_reference_values(data_dir: str, region: str, forecast_date: str,
+                               method: str, configuration: str, entity: int):
+    """
+    Get the reference values (e.g. for different return periods) for a given region,
+    forecast date, method, configuration, and entity.
+    """
+    region_path = utils.check_region_path(data_dir, region)
+    return await asyncio.to_thread(_get_reference_values, region_path, forecast_date,
+                                   method, configuration, entity)
+
+
 async def get_analogs(data_dir: str, region: str, forecast_date: str, method: str,
                       configuration: str, entity: int, target_date: str):
-        """
-        Get the analogs for a given region, forecast date, method, configuration, entity, and target date.
-        """
-        region_path = utils.check_region_path(data_dir, region)
-        return await asyncio.to_thread(_get_analogs, region_path, forecast_date, method,
-                                     configuration, entity, target_date)
+    """
+    Get the analogs for a given region, forecast date, method, configuration, entity,
+    and target date.
+    """
+    region_path = utils.check_region_path(data_dir, region)
+    return await asyncio.to_thread(_get_analogs, region_path, forecast_date, method,
+                                   configuration, entity, target_date)
 
 
 async def get_analog_dates(data_dir: str, region: str, forecast_date: str, method: str,
                            configuration: str, target_date: str):
     """
-    Get the analog dates for a given region, date, method, configuration, and target date.
+    Get the analog dates for a given region, date, method, configuration,
+    and target date.
     """
     region_path = utils.check_region_path(data_dir, region)
     return await asyncio.to_thread(_get_analog_dates, region_path, forecast_date,
@@ -30,7 +43,8 @@ async def get_analog_dates(data_dir: str, region: str, forecast_date: str, metho
 async def get_analog_criteria(data_dir: str, region: str, forecast_date: str,
                               method: str, configuration: str, target_date: str):
     """
-    Get the analog criteria for a given region, date, method, configuration, and target date.
+    Get the analog criteria for a given region, date, method, configuration,
+    and target date.
     """
     region_path = utils.check_region_path(data_dir, region)
     return await asyncio.to_thread(_get_analog_criteria, region_path, forecast_date,
@@ -40,7 +54,8 @@ async def get_analog_criteria(data_dir: str, region: str, forecast_date: str,
 async def get_analog_values(data_dir: str, region: str, forecast_date: str, method: str,
                             configuration: str, entity: int, target_date: str):
     """
-    Get the precipitation values for a given region, date, method, configuration, and entity.
+    Get the precipitation values for a given region, date, method, configuration,
+    and entity.
     """
     region_path = utils.check_region_path(data_dir, region)
     return await asyncio.to_thread(_get_analog_values, region_path, forecast_date,
@@ -51,7 +66,8 @@ async def get_series_analog_values_best(data_dir: str, region: str, forecast_dat
                                         method: str, configuration: str, entity: int,
                                         number: int):
     """
-    Get the time series of the best analog values for a given region, date, method, configuration, and entity.
+    Get the time series of the best analog values for a given region, date, method,
+    configuration, and entity.
     """
     region_path = utils.check_region_path(data_dir, region)
     return await asyncio.to_thread(_get_series_analog_values_best, region_path,
@@ -63,12 +79,32 @@ async def get_series_analog_values_percentiles(data_dir: str, region: str,
                                                configuration: str, entity: int,
                                                percentiles: list[int]):
     """
-    Get the time series for specific percentiles for a given region, date, method, configuration, and entity.
+    Get the time series for specific percentiles for a given region, date, method,
+    configuration, and entity.
     """
     region_path = utils.check_region_path(data_dir, region)
     return await asyncio.to_thread(_get_series_analog_values_percentiles, region_path,
                                    forecast_date, method, configuration, entity,
                                    percentiles)
+
+
+def _get_reference_values(region_path: str, forecast_date: str, method: str,
+                          configuration: str, entity: int):
+    """
+    Synchronous function to get the reference values from the netCDF file.
+    """
+    file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+
+    with xr.open_dataset(file_path) as ds:
+        entity_idx = _get_entity_index(ds, entity)
+        axis = ds.reference_axis.values.tolist()
+        values = ds.reference_values[entity_idx,:].astype(float).values.tolist()
+
+    reference_values = {"axis": axis, "values": values}
+
+    return {"reference_values": reference_values}
 
 
 def _get_analogs(region_path: str, forecast_date: str, method: str, configuration: str,
@@ -91,8 +127,8 @@ def _get_analogs(region_path: str, forecast_date: str, method: str, configuratio
             float).values.tolist()
         ranks = list(range(1, len(analog_dates) + 1))
         analogs = [{"date": date, "criteria": criteria, "value": value, "rank": rank}
-                     for date, criteria, value, rank in
-                        zip(analog_dates, analog_criteria, values, ranks)]
+                   for date, criteria, value, rank in
+                   zip(analog_dates, analog_criteria, values, ranks)]
 
     return {"analogs": analogs}
 
@@ -152,7 +188,8 @@ def _get_analog_values(region_path: str, forecast_date: str, method: str,
 def _get_series_analog_values_best(region_path: str, forecast_date: str, method: str,
                                    configuration: str, entity: int, number: int):
     """
-    Synchronous function to get the time series of the best analog values from the netCDF file.
+    Synchronous function to get the time series of the best analog values
+    from the netCDF file.
     """
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
@@ -176,7 +213,8 @@ def _get_series_analog_values_percentiles(region_path: str, forecast_date: str,
                                           method: str, configuration: str, entity: int,
                                           percentiles: list[int]):
     """
-    Synchronous function to get the time series for specific percentiles from the netCDF file.
+    Synchronous function to get the time series for specific percentiles
+    from the netCDF file.
     """
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
@@ -194,12 +232,12 @@ def _get_series_analog_values_percentiles(region_path: str, forecast_date: str,
             values_sorted = np.sort(values).flatten()
 
             # Compute the percentiles with numpy
-            #series_values[:, analog_idx] = np.percentile(values, percentiles)
+            # series_values[:, analog_idx] = np.percentile(values, percentiles)
 
             # Compute the percentiles
             frequencies = utils.build_cumulative_frequency(analogs_nb[analog_idx])
             for i_pc, pc in enumerate(percentiles):
-                val = np.interp(pc/100, frequencies, values_sorted)
+                val = np.interp(pc / 100, frequencies, values_sorted)
                 series_values[i_pc, analog_idx] = val
 
     # Extract lists of values per percentile
@@ -242,4 +280,3 @@ def _get_entity_index(ds, entity):
     if entity_idx == -1:
         raise ValueError(f"Entity not found: {entity}")
     return entity_idx
-

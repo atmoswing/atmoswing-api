@@ -3,6 +3,19 @@ from typing import List
 from datetime import datetime
 
 
+class ReferenceValues(BaseModel):
+    axis: List[float]
+    values: List[float]
+
+    @field_validator("axis")
+    def round_axis(cls, v: List[float]) -> List[float]:
+        return [round(float(value), 2) for value in v]
+
+    @field_validator("values")
+    def round_values(cls, v: List[float]) -> List[float]:
+        return [round(float(value), 2) for value in v]
+
+
 class Analog(BaseModel):
     date: datetime
     value: float
@@ -48,3 +61,16 @@ class SeriesAnalogValues(BaseModel):
     @field_validator("series_values")
     def round_series(cls, v: List[List[float]]) -> List[List[float]]:
         return [[round(float(value), 2) for value in series] for series in v]
+
+
+class SeriesAnalogValuesPercentile(BaseModel):
+    percentile: int
+    series_values: List[float]
+
+    @field_validator("series_values")
+    def round_series(cls, v: List[float]) -> List[float]:
+        return [round(float(value), 2) for value in v]
+
+
+class SeriesAnalogValuesPercentiles(BaseModel):
+    series_percentiles: List[SeriesAnalogValuesPercentile]
