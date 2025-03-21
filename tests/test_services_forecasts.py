@@ -4,7 +4,8 @@ import pytest
 from datetime import datetime
 
 from atmoswing_api.app.services.forecasts import get_analog_values, get_analog_dates, \
-    get_analog_criteria, get_analogs, get_series_analog_values_best
+    get_analog_criteria, get_analogs, get_series_analog_values_best, \
+    get_series_analog_values_percentiles
 
 
 @pytest.mark.asyncio
@@ -98,7 +99,7 @@ async def test_get_analogs():
 
 
 @pytest.mark.asyncio
-async def get_series_analog_values_10_best():
+async def test_get_series_analog_values_10_best():
     # /forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/3/series-values-best-analogs
     result = await get_series_analog_values_best(
         "./data", region="adn", forecast_date="2024-10-05", method="4Zo-CEP",
@@ -117,7 +118,7 @@ async def get_series_analog_values_10_best():
 
 
 @pytest.mark.asyncio
-async def get_series_analog_values_5_best():
+async def test_get_series_analog_values_5_best():
     # /forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/3/series-values-best-analogs?number=5
     result = await get_series_analog_values_best(
         "./data", region="adn", forecast_date="2024-10-05", method="4Zo-CEP",
@@ -133,3 +134,26 @@ async def get_series_analog_values_5_best():
         [0.5, 2.9, 59.6, 0, 23.8], rel=1e-2)
     assert result[7] == pytest.approx(
         [2.4, 1.6, 13.3, 0, 0], rel=1e-2)
+
+
+@pytest.mark.asyncio
+async def test_get_series_analog_values_percentiles():
+    # /forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/3/series-values-percentiles
+    result = await get_series_analog_values_percentiles(
+        "./data", region="adn", forecast_date="2024-10-05", method="4Zo-CEP",
+        configuration="Alpes_Nord", entity=3, percentiles=[20, 60, 90])
+
+    result = result["series_percentiles"]
+
+    assert result[0]["percentile"] == 20
+    assert result[0]["series_values"] == pytest.approx(
+        [0, 0, 0.93, 12.26, 7.31, 0, 0, 0], rel=1e-2)
+
+    assert result[1]["percentile"] == 60
+    assert result[1]["series_values"] == pytest.approx(
+        [0, 3.6, 23.14, 21.49, 27.91, 2.09, 0, 1.87], rel=1e-2)
+
+    assert result[2]["percentile"] == 90
+    assert result[2]["series_values"] == pytest.approx(
+        [0, 12.97, 67, 54.45, 62.92, 16.86, 3.34, 10.74], rel=1e-2)
+

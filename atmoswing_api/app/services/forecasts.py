@@ -58,6 +58,19 @@ async def get_series_analog_values_best(data_dir: str, region: str, forecast_dat
                                    forecast_date, method, configuration, entity, number)
 
 
+async def get_series_analog_values_percentiles(data_dir: str, region: str,
+                                               forecast_date: str, method: str,
+                                               configuration: str, entity: int,
+                                               percentiles: list[int]):
+    """
+    Get the time series for specific percentiles for a given region, date, method, configuration, and entity.
+    """
+    region_path = utils.check_region_path(data_dir, region)
+    return await asyncio.to_thread(_get_series_analog_values_percentiles, region_path,
+                                   forecast_date, method, configuration, entity,
+                                   percentiles)
+
+
 def _get_analogs(region_path: str, forecast_date: str, method: str, configuration: str,
                  entity: int, target_date: str):
     """
@@ -157,6 +170,46 @@ def _get_series_analog_values_best(region_path: str, forecast_date: str, method:
             series_values.append(values)
 
     return {"series_values": series_values}
+
+
+def _get_series_analog_values_percentiles(region_path: str, forecast_date: str,
+                                          method: str, configuration: str, entity: int,
+                                          percentiles: list[int]):
+    """
+    Synchronous function to get the time series for specific percentiles from the netCDF file.
+    """
+    file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+
+    with xr.open_dataset(file_path) as ds:
+        entity_idx = _get_entity_index(ds, entity)
+        analogs_nb = ds.analogs_nb.values
+        series_values = np.zeros((len(percentiles), len(analogs_nb)))
+        for analog_idx in range(len(analogs_nb)):
+            start_idx = int(np.sum(analogs_nb[:analog_idx]))
+            end_idx = start_idx + int(analogs_nb[analog_idx])
+            values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
+                float).values
+            values_sorted = np.sort(values).flatten()
+
+            # Compute the percentiles with numpy
+            #series_values[:, analog_idx] = np.percentile(values, percentiles)
+
+            # Compute the percentiles
+            frequencies = utils.build_cumulative_frequency(analogs_nb[analog_idx])
+            for i_pc, pc in enumerate(percentiles):
+                val = np.interp(pc/100, frequencies, values_sorted)
+                series_values[i_pc, analog_idx] = val
+
+    # Extract lists of values per percentile
+    output = []
+    for i_pc, pc in enumerate(percentiles):
+        output.append(
+            {"percentile": pc,
+             "series_values": series_values[i_pc, :].tolist()})
+
+    return {"series_percentiles": output}
 
 
 def _get_row_indices(ds, target_date):

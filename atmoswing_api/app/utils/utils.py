@@ -1,5 +1,6 @@
 import os
 import glob
+import numpy as np
 from datetime import datetime, date
 
 
@@ -62,3 +63,32 @@ def get_file_path(region_path: str, datetime_str: str, method: str, configuratio
     file_path = f"{path}/{dt.year:04d}-{dt.month:02d}-{dt.day:02d}_{dt.hour:02d}.{method}.{configuration}.nc"
 
     return file_path
+
+
+def build_cumulative_frequency(size):
+    """
+    Constructs a cumulative frequency distribution.
+
+    Parameters
+    ----------
+    size: int
+        The size of the distribution.
+
+    Returns
+    -------
+    f: ndarray
+        The cumulative frequency distribution.
+    """
+    # Parameters for the estimated distribution from Gringorten (a=0.44, b=0.12).
+    # Choice based on [Cunnane, C., 1978, Unbiased plotting positions—A review:
+    # Journal of Hydrology, v. 37, p. 205–222.]
+    irep = 0.44
+    nrep = 0.12
+
+    divisor = 1.0 / (size + nrep)
+
+    f = np.arange(size, dtype=float)
+    f += 1.0 - irep
+    f *= divisor
+
+    return f
