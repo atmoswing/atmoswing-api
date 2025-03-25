@@ -3,9 +3,7 @@ from unittest import result
 import pytest
 from datetime import datetime
 
-from atmoswing_api.app.services.forecasts import get_analog_values, get_analog_dates, \
-    get_analog_criteria, get_analogs, get_series_analog_values_best, \
-    get_series_analog_values_percentiles, get_reference_values
+from atmoswing_api.app.services.forecasts import *
 
 
 @pytest.mark.asyncio
@@ -165,11 +163,19 @@ async def test_get_reference_values():
         "./data", region="adn", forecast_date="2024-10-05", method="4Zo-CEP",
         configuration="Alpes_Nord", entity=3)
 
-    result = result["reference_values"]
-
     assert result["axis"] == pytest.approx(
         [2.0, 2.33, 5.0, 10.0, 20.0, 50.0, 100.0, 200.0, 300.0, 500.0], rel=1e-2)
     assert result["values"] == pytest.approx(
         [66.60, 70.23, 85.97, 98.80, 111.10, 127.02, 138.95, 150.84, 157.78, 166.52],
         rel=1e-2)
 
+
+@pytest.mark.asyncio
+async def test_get_analog_values_percentile():
+    # /forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/2024-10-07T00/analog-values-percentile/60
+    result = await get_analog_values_percentile(
+        "./data", region="adn", forecast_date="2024-10-05", method="4Zo-CEP",
+        configuration="Alpes_Nord", target_date="2024-10-07", percentile=60)
+
+    assert result["values"] == pytest.approx(
+        [0.5, 1.1, 23.1, 2.2, 0.6, 9.9, 1.8, 5.5, 7.0], rel=5e-2)

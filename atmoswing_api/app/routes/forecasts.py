@@ -5,11 +5,8 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from typing_extensions import Annotated
 
 import config
-from app.models.forecast import AnalogValues, AnalogDates, AnalogCriteria, Analogs, \
-    SeriesAnalogValues, SeriesAnalogValuesPercentiles, ReferenceValues
-from app.services.forecasts import get_analog_values, get_analog_dates, \
-    get_analog_criteria, get_analogs, get_series_analog_values_best, \
-    get_series_analog_values_percentiles, get_reference_values
+from app.models.forecast import *
+from app.services.forecasts import *
 
 router = APIRouter()
 debug = False
@@ -71,6 +68,26 @@ async def analog_criteria(
     return await _handle_request(get_analog_criteria, settings, region,
                                  forecast_date=forecast_date, method=method,
                                  configuration=configuration, target_date=target_date)
+
+
+@router.get("/{region}/{forecast_date}/{method}/{configuration}/{target_date}/analog-values-percentile/{percentile}",
+            summary="Values for all entities for a given quantile, forecast and target date",
+            response_model=EntitiesAnalogValuesPercentile)
+async def analog_values_percentile(
+        region: str,
+        forecast_date: str,
+        method: str,
+        configuration: str,
+        target_date: str,
+        percentile: int,
+        settings: Annotated[config.Settings, Depends(get_settings)]):
+    """
+    Get the precipitation values for a given region, forecast_date, method, configuration, target_date, and percentile.
+    """
+    return await _handle_request(get_analog_values_percentile, settings, region,
+                                 forecast_date=forecast_date, method=method,
+                                 configuration=configuration, target_date=target_date,
+                                 percentile=percentile)
 
 
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/reference-values",

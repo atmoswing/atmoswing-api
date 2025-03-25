@@ -74,3 +74,12 @@ class SeriesAnalogValuesPercentile(BaseModel):
 
 class SeriesAnalogValuesPercentiles(BaseModel):
     series_percentiles: List[SeriesAnalogValuesPercentile]
+
+
+class EntitiesAnalogValuesPercentile(BaseModel):
+    entity_ids: int
+    values: List[float]
+
+    @field_validator("values")
+    def round_values(cls, v: List[float]) -> List[float]:
+        return [round(float(value), 2) for value in v]

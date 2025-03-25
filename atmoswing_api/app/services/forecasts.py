@@ -62,6 +62,19 @@ async def get_analog_values(data_dir: str, region: str, forecast_date: str, meth
                                    method, configuration, entity, target_date)
 
 
+async def get_analog_values_percentile(data_dir: str, region: str, forecast_date: str,
+                                       method: str, configuration: str,
+                                       target_date: str, percentile: int):
+    """
+    Get the precipitation values for a given region, date, method, configuration,
+    target date, and percentile.
+    """
+    region_path = utils.check_region_path(data_dir, region)
+    return await asyncio.to_thread(_get_analog_values_percentile, region_path,
+                                   forecast_date, method, configuration,
+                                   target_date, percentile)
+
+
 async def get_series_analog_values_best(data_dir: str, region: str, forecast_date: str,
                                         method: str, configuration: str, entity: int,
                                         number: int):
@@ -104,7 +117,7 @@ def _get_reference_values(region_path: str, forecast_date: str, method: str,
 
     reference_values = {"axis": axis, "values": values}
 
-    return {"reference_values": reference_values}
+    return reference_values
 
 
 def _get_analogs(region_path: str, forecast_date: str, method: str, configuration: str,
@@ -185,6 +198,31 @@ def _get_analog_values(region_path: str, forecast_date: str, method: str,
     return {"values": values}
 
 
+def _get_analog_values_percentile(region_path: str, forecast_date: str, method: str,
+                                  configuration: str, target_date: str, percentile: int):
+    """
+    Synchronous function to get the precipitation values for a specific percentile
+    from the netCDF file.
+    """
+    file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+
+    with xr.open_dataset(file_path) as ds:
+        start_idx, end_idx = _get_row_indices(ds, target_date)
+        values = ds.analog_values_raw[:, start_idx:end_idx].astype(float).values
+        values_sorted = np.sort(values, axis=1)
+        station_ids = ds.station_ids.values.tolist()
+
+        # Compute the percentiles
+        n_entities = values_sorted.shape[0]
+        n_analogs = values_sorted.shape[1]
+        freq = utils.build_cumulative_frequency(n_analogs)
+        values = [float(np.interp(percentile / 100, freq, values_sorted[i, :])) for i in
+                  range(n_entities)]
+
+    return {"entity_ids": station_ids, "values": values}
+
 def _get_series_analog_values_best(region_path: str, forecast_date: str, method: str,
                                    configuration: str, entity: int, number: int):
     """
@@ -229,10 +267,7 @@ def _get_series_analog_values_percentiles(region_path: str, forecast_date: str,
             end_idx = start_idx + int(analogs_nb[analog_idx])
             values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
                 float).values
-            values_sorted = np.sort(values).flatten()
-
-            # Compute the percentiles with numpy
-            # series_values[:, analog_idx] = np.percentile(values, percentiles)
+            values_sorted = np.sort(values)
 
             # Compute the percentiles
             frequencies = utils.build_cumulative_frequency(analogs_nb[analog_idx])
