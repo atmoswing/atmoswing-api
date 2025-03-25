@@ -202,3 +202,25 @@ async def test_get_analog_values_best():
 
     assert result["values"] == pytest.approx(
         [0.5, 2.9, 59.6, 0, 23.8, 1.3, 83.1, 64.2, 9.3, 37.1], rel=1e-2)
+
+
+@pytest.mark.asyncio
+async def test_get_series_analog_values_percentiles_history():
+    # /forecasts/adn/2024-10-06T18/4Zo-GFS/Alpes_Nord/3/series-values-percentiles-history
+    result = await get_series_analog_values_percentiles_history(
+        "./data", region="adn", forecast_date="2024-10-06T18", method="4Zo-GFS",
+        configuration="Alpes_Nord", entity=3, percentiles=[20, 60, 90], number=5)
+
+    assert result["forecast_dates"] == [
+        datetime(2024, 10, 6, 12),
+        datetime(2024, 10, 6, 6),
+        datetime(2024, 10, 6, 0),
+        datetime(2024, 10, 5, 18),
+        datetime(2024, 10, 5, 12),
+    ]
+
+    assert len(result["forecasts"]) == 5
+    assert len(result["forecasts"][0]["series_percentiles"]) == 3
+    assert result["forecasts"][0]["series_percentiles"][0]["percentile"] == 20
+    assert result["forecasts"][0]["series_percentiles"][1]["percentile"] == 60
+    assert result["forecasts"][0]["series_percentiles"][2]["percentile"] == 90

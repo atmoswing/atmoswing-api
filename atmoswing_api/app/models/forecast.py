@@ -85,6 +85,11 @@ class SeriesAnalogValuesPercentiles(BaseModel):
     series_percentiles: List[SeriesAnalogValuesPercentile]
 
 
+class SeriesAnalogValuesPercentilesHistory(BaseModel):
+    forecast_dates: List[datetime]
+    forecasts: List[SeriesAnalogValuesPercentiles]
+
+
 class EntitiesAnalogValuesPercentile(BaseModel):
     entity_ids: int
     values: List[float]

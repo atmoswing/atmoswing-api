@@ -148,6 +148,27 @@ async def series_analog_values_percentiles(
                                  percentiles=percentiles)
 
 
+@router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/series-values-percentiles-history",
+    summary="Values for one entity for a given quantile, forecast and target date",
+    response_model=SeriesAnalogValuesPercentilesHistory)
+async def series_analog_values_percentiles_history(
+        region: str,
+        forecast_date: str,
+        method: str,
+        configuration: str,
+        entity: int,
+        settings: Annotated[config.Settings, Depends(get_settings)],
+        percentiles: List[int] = Query([20, 60, 90]),
+        number: int = 5):
+    """
+    Get the precipitation values for the provided percentiles and for a given region, forecast_date, method, configuration, and entity.
+    """
+    return await _handle_request(get_series_analog_values_percentiles_history, settings,
+                                 region, forecast_date=forecast_date, method=method,
+                                 configuration=configuration, entity=entity,
+                                 percentiles=percentiles, number=number)
+
+
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/{target_date}/analogs",
             summary="Details of the analogs (rank, date, criteria, value) for a given forecast and entity",
             response_model=Analogs)

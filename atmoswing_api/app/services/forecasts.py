@@ -127,6 +127,21 @@ async def get_series_analog_values_percentiles(data_dir: str, region: str,
                                    percentiles)
 
 
+async def get_series_analog_values_percentiles_history(data_dir: str, region: str,
+                                                       forecast_date: str, method: str,
+                                                       configuration: str, entity: int,
+                                                       percentiles: list[int],
+                                                       number: int):
+    """
+    Get the time series for historical percentiles for a given region, date, method,
+    configuration, entity, and number of analogs.
+    """
+    region_path = utils.check_region_path(data_dir, region)
+    return await asyncio.to_thread(_get_series_analog_values_percentiles_history,
+                                   region_path, forecast_date, method, configuration,
+                                   entity, percentiles, number)
+
+
 def _get_reference_values(region_path: str, forecast_date: str, method: str,
                           configuration: str, entity: int):
     """
@@ -357,6 +372,46 @@ def _get_series_analog_values_percentiles(region_path: str, forecast_date: str,
              "series_values": series_values[i_pc, :].tolist()})
 
     return {"series_percentiles": output}
+
+
+def _get_series_analog_values_percentiles_history(region_path: str, forecast_date: str,
+                                                  method: str, configuration: str,
+                                                  entity: int, percentiles: list[int],
+                                                  number: int):
+    """
+    Synchronous function to get the time series for historical percentiles
+    from the netCDF file.
+    """
+    diff = np.timedelta64(3, 'h')
+    dt = utils.convert_to_datetime(forecast_date)
+    counter_found = 0
+    counter_tot = 0
+    forecast_dates = []
+    forecasts = []
+    while True:
+        if counter_found >= number:
+            break
+        if counter_tot > 100:
+            break
+
+        counter_tot += 1
+        dt = dt - diff
+        path_dir = f"{region_path}/{dt.year:04d}/{dt.month:02d}/{dt.day:02d}"
+        path = f"{path_dir}/{dt.year:04d}-{dt.month:02d}-{dt.day:02d}_{dt.hour:02d}.{method}.{configuration}.nc"
+        if not os.path.exists(path):
+            continue
+
+        dt_str = f"{dt.year:04d}-{dt.month:02d}-{dt.day:02d}T{dt.hour:02d}"
+        series_percentiles = _get_series_analog_values_percentiles(
+            region_path, dt_str, method, configuration, entity, percentiles)
+
+        forecast_dates.append(dt)
+        forecasts.append(series_percentiles)
+        counter_found += 1
+
+
+
+    return {"forecast_dates": forecast_dates, "forecasts": forecasts}
 
 
 def _get_row_indices(ds, target_date):
