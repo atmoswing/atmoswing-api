@@ -43,6 +43,15 @@ class AnalogValues(BaseModel):
         return [round(float(value), 2) for value in v]
 
 
+class AnalogValuesPercentiles(BaseModel):
+    percentiles: List[int]
+    values: List[float]
+
+    @field_validator("values")
+    def round_values(cls, v: List[float]) -> List[float]:
+        return [round(float(value), 2) for value in v]
+
+
 class AnalogDates(BaseModel):
     dates: List[datetime]
 

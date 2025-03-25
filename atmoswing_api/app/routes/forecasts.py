@@ -70,10 +70,10 @@ async def analog_criteria(
                                  configuration=configuration, target_date=target_date)
 
 
-@router.get("/{region}/{forecast_date}/{method}/{configuration}/{target_date}/analog-values-percentile/{percentile}",
+@router.get("/{region}/{forecast_date}/{method}/{configuration}/{target_date}/entities-values-percentile/{percentile}",
             summary="Values for all entities for a given quantile, forecast and target date",
             response_model=EntitiesAnalogValuesPercentile)
-async def analog_values_percentile(
+async def entities_analog_values_percentile(
         region: str,
         forecast_date: str,
         method: str,
@@ -84,7 +84,7 @@ async def analog_values_percentile(
     """
     Get the precipitation values for a given region, forecast_date, method, configuration, target_date, and percentile.
     """
-    return await _handle_request(get_analog_values_percentile, settings, region,
+    return await _handle_request(get_entities_analog_values_percentile, settings, region,
                                  forecast_date=forecast_date, method=method,
                                  configuration=configuration, target_date=target_date,
                                  percentile=percentile)
@@ -187,3 +187,23 @@ async def analog_values(
                                  configuration=configuration, entity=entity,
                                  target_date=target_date)
 
+
+@router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/{target_date}/analog-values-percentiles",
+            summary="Values for one entity for a given quantile, forecast and target date",
+            response_model=AnalogValuesPercentiles)
+async def analog_values_percentiles(
+        region: str,
+        forecast_date: str,
+        method: str,
+        configuration: str,
+        entity: int,
+        target_date: str,
+        settings: Annotated[config.Settings, Depends(get_settings)],
+        percentiles: List[int] = Query([20, 60, 90])):
+    """
+    Get the precipitation values for a given region, forecast_date, method, configuration, entity, target_date, and percentile.
+    """
+    return await _handle_request(get_analog_values_percentiles, settings, region,
+                                 forecast_date=forecast_date, method=method,
+                                 configuration=configuration, entity=entity,
+                                 target_date=target_date, percentiles=percentiles)

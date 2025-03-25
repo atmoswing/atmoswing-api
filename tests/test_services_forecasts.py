@@ -171,11 +171,24 @@ async def test_get_reference_values():
 
 
 @pytest.mark.asyncio
-async def test_get_analog_values_percentile():
-    # /forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/2024-10-07T00/analog-values-percentile/60
-    result = await get_analog_values_percentile(
+async def test_get_entities_analog_values_percentile():
+    # /forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/2024-10-07T00/entities-values-percentile/60
+    result = await get_entities_analog_values_percentile(
         "./data", region="adn", forecast_date="2024-10-05", method="4Zo-CEP",
         configuration="Alpes_Nord", target_date="2024-10-07", percentile=60)
 
     assert result["values"] == pytest.approx(
         [0.5, 1.1, 23.1, 2.2, 0.6, 9.9, 1.8, 5.5, 7.0], rel=5e-2)
+
+
+@pytest.mark.asyncio
+async def test_get_analog_values_percentiles():
+    # /forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/3/2024-10-07T00/analog-values-percentiles
+    result = await get_analog_values_percentiles(
+        "./data", region="adn", forecast_date="2024-10-05", method="4Zo-CEP",
+        configuration="Alpes_Nord", entity=3, target_date="2024-10-07",
+        percentiles=[20, 60, 90])
+
+    assert result["percentiles"] == [20, 60, 90]
+    assert result["values"] == pytest.approx(
+        [0.93, 23.14, 67.00], rel=1e-2)
