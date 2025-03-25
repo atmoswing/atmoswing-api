@@ -129,7 +129,7 @@ async def series_analog_values_best(
 
 
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/series-values-percentiles",
-    summary="Analog values of the best analogs for a given entity (time series)",
+    summary="Values for one entity for a given quantile, forecast and target date",
     response_model=SeriesAnalogValuesPercentiles)
 async def series_analog_values_percentiles(
         region: str,
@@ -207,3 +207,24 @@ async def analog_values_percentiles(
                                  forecast_date=forecast_date, method=method,
                                  configuration=configuration, entity=entity,
                                  target_date=target_date, percentiles=percentiles)
+
+
+@router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/{target_date}/analog-values-best",
+            summary="Values for one entity for a given quantile, forecast and target date",
+            response_model=AnalogValues)
+async def analog_values_best(
+        region: str,
+        forecast_date: str,
+        method: str,
+        configuration: str,
+        entity: int,
+        target_date: str,
+        settings: Annotated[config.Settings, Depends(get_settings)],
+        number: int = 10):
+    """
+    Get the precipitation values for the best analogs and for a given region, forecast_date, method, configuration, entity, and target_date.
+    """
+    return await _handle_request(get_analog_values_best, settings, region,
+                                 forecast_date=forecast_date, method=method,
+                                 configuration=configuration, entity=entity,
+                                 target_date=target_date, number=number)

@@ -75,6 +75,18 @@ async def get_analog_values_percentiles(data_dir: str, region: str, forecast_dat
                                    target_date, percentiles)
 
 
+async def get_analog_values_best(data_dir: str, region: str, forecast_date: str,
+                                 method: str, configuration: str, entity: int,
+                                 target_date: str, number: int):
+    """
+    Get the precipitation values for the best analogs for a given region, date, method,
+    configuration, and entity.
+    """
+    region_path = utils.check_region_path(data_dir, region)
+    return await asyncio.to_thread(_get_analog_values_best, region_path, forecast_date,
+                                   method, configuration, entity, target_date, number)
+
+
 async def get_entities_analog_values_percentile(data_dir: str, region: str,
                                                 forecast_date: str, method: str,
                                                 configuration: str, target_date: str,
@@ -236,6 +248,27 @@ def _get_analog_values_percentiles(region_path: str, forecast_date: str, method:
                     percentile in percentiles]
 
     return {"percentiles": percentiles, "values": values}
+
+
+def _get_analog_values_best(region_path: str, forecast_date: str, method: str,
+                            configuration: str, entity: int, target_date: str,
+                            number: int):
+    """
+    Synchronous function to get the precipitation values for the best analogs
+    from the netCDF file.
+    """
+    file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+
+    with xr.open_dataset(file_path) as ds:
+        entity_idx = _get_entity_index(ds, entity)
+        start_idx, end_idx = _get_row_indices(ds, target_date)
+        end_idx = min(end_idx, start_idx + number)
+        values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
+            float).values
+
+    return {"values": values}
 
 
 def _get_entities_analog_values_percentile(region_path: str, forecast_date: str,
