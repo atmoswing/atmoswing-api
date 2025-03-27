@@ -152,7 +152,7 @@ def _get_reference_values(region_path: str, forecast_date: str, method: str,
         raise FileNotFoundError(f"File not found: {file_path}")
 
     with xr.open_dataset(file_path) as ds:
-        entity_idx = _get_entity_index(ds, entity)
+        entity_idx = utils.get_entity_index(ds, entity)
         axis = ds.reference_axis.values.tolist()
         values = ds.reference_values[entity_idx,:].astype(float).values.tolist()
 
@@ -171,8 +171,8 @@ def _get_analogs(region_path: str, forecast_date: str, method: str, configuratio
         raise FileNotFoundError(f"File not found: {file_path}")
 
     with xr.open_dataset(file_path) as ds:
-        entity_idx = _get_entity_index(ds, entity)
-        start_idx, end_idx = _get_row_indices(ds, target_date)
+        entity_idx = utils.get_entity_index(ds, entity)
+        start_idx, end_idx = utils.get_row_indices(ds, target_date)
         analog_dates = [date.astype('datetime64[s]').item() for date in
                         ds.analog_dates.values[start_idx:end_idx]]
         analog_criteria = ds.analog_criteria[start_idx:end_idx].astype(
@@ -197,7 +197,7 @@ def _get_analog_dates(region_path: str, forecast_date: str, method: str,
         raise FileNotFoundError(f"File not found: {file_path}")
 
     with xr.open_dataset(file_path) as ds:
-        start_idx, end_idx = _get_row_indices(ds, target_date)
+        start_idx, end_idx = utils.get_row_indices(ds, target_date)
         analog_dates = [date.astype('datetime64[s]').item() for date in
                         ds.analog_dates.values[start_idx:end_idx]]
 
@@ -214,7 +214,7 @@ def _get_analog_criteria(region_path: str, forecast_date: str, method: str,
         raise FileNotFoundError(f"File not found: {file_path}")
 
     with (xr.open_dataset(file_path) as ds):
-        start_idx, end_idx = _get_row_indices(ds, target_date)
+        start_idx, end_idx = utils.get_row_indices(ds, target_date)
         analog_criteria = ds.analog_criteria[start_idx:end_idx].astype(
             float).values.tolist()
 
@@ -231,8 +231,8 @@ def _get_analog_values(region_path: str, forecast_date: str, method: str,
         raise FileNotFoundError(f"File not found: {file_path}")
 
     with xr.open_dataset(file_path) as ds:
-        entity_idx = _get_entity_index(ds, entity)
-        start_idx, end_idx = _get_row_indices(ds, target_date)
+        entity_idx = utils.get_entity_index(ds, entity)
+        start_idx, end_idx = utils.get_row_indices(ds, target_date)
         values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
             float).values.tolist()
 
@@ -251,8 +251,8 @@ def _get_analog_values_percentiles(region_path: str, forecast_date: str, method:
         raise FileNotFoundError(f"File not found: {file_path}")
 
     with xr.open_dataset(file_path) as ds:
-        entity_idx = _get_entity_index(ds, entity)
-        start_idx, end_idx = _get_row_indices(ds, target_date)
+        entity_idx = utils.get_entity_index(ds, entity)
+        start_idx, end_idx = utils.get_row_indices(ds, target_date)
         values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
             float).values
         values_sorted = np.sort(values)
@@ -277,8 +277,8 @@ def _get_analog_values_best(region_path: str, forecast_date: str, method: str,
         raise FileNotFoundError(f"File not found: {file_path}")
 
     with xr.open_dataset(file_path) as ds:
-        entity_idx = _get_entity_index(ds, entity)
-        start_idx, end_idx = _get_row_indices(ds, target_date)
+        entity_idx = utils.get_entity_index(ds, entity)
+        start_idx, end_idx = utils.get_row_indices(ds, target_date)
         end_idx = min(end_idx, start_idx + number)
         values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
             float).values
@@ -298,7 +298,7 @@ def _get_entities_analog_values_percentile(region_path: str, forecast_date: str,
         raise FileNotFoundError(f"File not found: {file_path}")
 
     with xr.open_dataset(file_path) as ds:
-        start_idx, end_idx = _get_row_indices(ds, target_date)
+        start_idx, end_idx = utils.get_row_indices(ds, target_date)
         values = ds.analog_values_raw[:, start_idx:end_idx].astype(float).values
         values_sorted = np.sort(values, axis=1)
         station_ids = ds.station_ids.values.tolist()
@@ -324,7 +324,7 @@ def _get_series_analog_values_best(region_path: str, forecast_date: str, method:
 
     with xr.open_dataset(file_path) as ds:
         series_values = []
-        entity_idx = _get_entity_index(ds, entity)
+        entity_idx = utils.get_entity_index(ds, entity)
         analogs_nb = ds.analogs_nb.values
         for idx in range(len(analogs_nb)):
             start_idx = int(np.sum(analogs_nb[:idx]))
@@ -348,7 +348,7 @@ def _get_series_analog_values_percentiles(region_path: str, forecast_date: str,
         raise FileNotFoundError(f"File not found: {file_path}")
 
     with xr.open_dataset(file_path) as ds:
-        entity_idx = _get_entity_index(ds, entity)
+        entity_idx = utils.get_entity_index(ds, entity)
         analogs_nb = ds.analogs_nb.values
         series_values = np.zeros((len(percentiles), len(analogs_nb)))
         target_dates = [np.datetime64(date).astype('datetime64[s]').item() for date in
@@ -414,34 +414,3 @@ def _get_series_analog_values_percentiles_history(region_path: str, forecast_dat
 
     return {"past_forecasts": forecasts}
 
-
-def _get_row_indices(ds, target_date):
-    # Get the start and end indices for the entity
-    target_date_idx = _get_target_date_index(ds, target_date)
-    analogs_nb = ds.analogs_nb.values
-    start_idx = int(np.sum(analogs_nb[:target_date_idx]))
-    end_idx = start_idx + int(analogs_nb[target_date_idx])
-    return start_idx, end_idx
-
-
-def _get_target_date_index(ds, target_date):
-    # Find the lead time
-    target_dates = ds.target_dates.values
-    target_date = utils.convert_to_datetime(target_date)
-    target_date_idx = -1
-    for i, date in enumerate(target_dates):
-        date = np.datetime64(date).astype('datetime64[s]').item()
-        if date == target_date:
-            target_date_idx = i
-            break
-    return target_date_idx
-
-
-def _get_entity_index(ds, entity):
-    # Find the entity ID
-    station_ids = ds.station_ids.values
-    indices = np.where(station_ids == entity)[0]
-    entity_idx = int(indices[0]) if indices.size > 0 else -1
-    if entity_idx == -1:
-        raise ValueError(f"Entity not found: {entity}")
-    return entity_idx
