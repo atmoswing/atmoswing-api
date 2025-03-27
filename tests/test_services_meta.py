@@ -1,9 +1,14 @@
 import pytest
+import os
 from unittest.mock import patch, MagicMock
 
 from atmoswing_api.app.services.meta import get_last_forecast_date_from_files, \
     _get_last_forecast_date, get_method_list, _get_methods_from_netcdf, \
     get_method_configs_list, get_entities_list
+
+# Path to the data directory
+cwd = os.path.dirname(os.path.abspath(__file__))
+data_dir = os.path.join(cwd, "data")
 
 
 @pytest.mark.asyncio
@@ -25,7 +30,7 @@ async def test_get_last_forecast_date_from_files_mock(mock_check_region_path, mo
 
 @pytest.mark.asyncio
 async def test_get_last_forecast_date_from_files():
-    result = await get_last_forecast_date_from_files("./data", "adn")
+    result = await get_last_forecast_date_from_files(data_dir, "adn")
 
     assert result == {"last_forecast_date": "2024-10-06T18"}
 
@@ -128,7 +133,7 @@ async def test_get_method_list_mock(mock_check_region_path, mock_get_methods):
 
 @pytest.mark.asyncio
 async def test_get_method_list():
-    result = await get_method_list("./data", "adn", "2024-10-06")
+    result = await get_method_list(data_dir, "adn", "2024-10-06")
 
     assert result[0] == {'id': '2Z-06h-GFS', 'name': 'Analogie circulation (2Z) 6h GFS'}
     assert result[5] == {'id': '4Zo-CEP', 'name': 'Analogie circulation (4Zo) CEP'}
@@ -235,7 +240,7 @@ async def test_get_method_configs_list_mock(
 
 @pytest.mark.asyncio
 async def test_get_method_configs_list():
-    result = await get_method_configs_list("./data", "adn", "2024-10-06")
+    result = await get_method_configs_list(data_dir, "adn", "2024-10-06")
 
     assert result[0] == {
         'configurations': [
