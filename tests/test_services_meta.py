@@ -327,7 +327,6 @@ async def test_get_entities_list_mock(
 @pytest.mark.asyncio
 async def test_get_entities_list():
     # Mock inputs
-    data_dir = "./data"
     region = "adn"
     date = "2024-10-05T00"
     method = "4Zo-GFS"
