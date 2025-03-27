@@ -1,7 +1,7 @@
 import os
 import glob
 import numpy as np
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 
 def check_region_path(data_dir, region) -> str:
@@ -20,6 +20,9 @@ def convert_to_date(date_str: str) -> date:
 
 
 def convert_to_datetime(datetime_str: str) -> datetime:
+    if isinstance(datetime_str, datetime):
+        return datetime_str
+
     try:
         return datetime.strptime(datetime_str, "%Y-%m-%dT%H")
     except ValueError:
@@ -35,6 +38,28 @@ def convert_to_mjd(date_str: str) -> float:
         dt = datetime(dt.year, dt.month, dt.day)
     mjd = (dt - datetime(1858, 11, 17)).total_seconds() / 86400.0
     return mjd
+
+
+def convert_to_target_date(forecast_date, lead_time) -> datetime:
+    forecast_date = convert_to_datetime(forecast_date)
+
+    if isinstance(lead_time, datetime):
+        return lead_time
+
+    if isinstance(lead_time, str):
+        try:
+            target_date = convert_to_datetime(lead_time)
+            return target_date
+        except Exception as e:
+            dt = int(lead_time)  # in hours
+            target_date = forecast_date + timedelta(hours=dt)
+            return target_date
+
+    if isinstance(lead_time, int):
+        target_date = forecast_date + timedelta(hours=lead_time)
+        return target_date
+
+    raise ValueError(f"Invalid lead time format ({lead_time})")
 
 
 def get_files_pattern(region_path: str, datetime_str: str, method='*') -> str:

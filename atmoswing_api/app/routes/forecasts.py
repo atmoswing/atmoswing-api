@@ -34,7 +34,7 @@ async def _handle_request(func, settings: config.Settings, region: str, **kwargs
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
-@router.get("/{region}/{forecast_date}/{method}/{configuration}/{target_date}/analog-dates",
+@router.get("/{region}/{forecast_date}/{method}/{configuration}/{lead_time}/analog-dates",
             summary="Analog dates for a given forecast and target date",
             response_model=AnalogDates)
 async def analog_dates(
@@ -42,17 +42,17 @@ async def analog_dates(
         forecast_date: str,
         method: str,
         configuration: str,
-        target_date: str,
+        lead_time: int|str,
         settings: Annotated[config.Settings, Depends(get_settings)]):
     """
-    Get the analog dates for a given region, forecast_date, method, configuration, and target_date.
+    Get the analog dates for a given region, forecast date, method, configuration, and lead time.
     """
     return await _handle_request(get_analog_dates, settings, region,
                                  forecast_date=forecast_date, method=method,
-                                 configuration=configuration, target_date=target_date)
+                                 configuration=configuration, lead_time=lead_time)
 
 
-@router.get("/{region}/{forecast_date}/{method}/{configuration}/{target_date}/analogy-criteria",
+@router.get("/{region}/{forecast_date}/{method}/{configuration}/{lead_time}/analogy-criteria",
             summary="Analog criteria for a given forecast and target date",
             response_model=AnalogCriteria)
 async def analog_criteria(
@@ -60,17 +60,17 @@ async def analog_criteria(
         forecast_date: str,
         method: str,
         configuration: str,
-        target_date: str,
+        lead_time: int|str,
         settings: Annotated[config.Settings, Depends(get_settings)]):
     """
-    Get the analog criteria for a given region, forecast_date, method, configuration, and target_date.
+    Get the analog criteria for a given region, forecast date, method, configuration, and lead time.
     """
     return await _handle_request(get_analog_criteria, settings, region,
                                  forecast_date=forecast_date, method=method,
-                                 configuration=configuration, target_date=target_date)
+                                 configuration=configuration, lead_time=lead_time)
 
 
-@router.get("/{region}/{forecast_date}/{method}/{configuration}/{target_date}/entities-values-percentile/{percentile}",
+@router.get("/{region}/{forecast_date}/{method}/{configuration}/{lead_time}/entities-values-percentile/{percentile}",
             summary="Values for all entities for a given quantile, forecast and target date",
             response_model=EntitiesAnalogValuesPercentile)
 async def entities_analog_values_percentile(
@@ -78,15 +78,15 @@ async def entities_analog_values_percentile(
         forecast_date: str,
         method: str,
         configuration: str,
-        target_date: str,
+        lead_time: int|str,
         percentile: int,
         settings: Annotated[config.Settings, Depends(get_settings)]):
     """
-    Get the precipitation values for a given region, forecast_date, method, configuration, target_date, and percentile.
+    Get the precipitation values for a given region, forecast date, method, configuration, lead time, and percentile.
     """
     return await _handle_request(get_entities_analog_values_percentile, settings, region,
                                  forecast_date=forecast_date, method=method,
-                                 configuration=configuration, target_date=target_date,
+                                 configuration=configuration, lead_time=lead_time,
                                  percentile=percentile)
 
 
@@ -101,7 +101,7 @@ async def reference_values(
         entity: int,
         settings: Annotated[config.Settings, Depends(get_settings)]):
     """
-    Get the reference values for a given region, forecast_date, method, configuration, and entity.
+    Get the reference values for a given region, forecast date, method, configuration, and entity.
     """
     return await _handle_request(get_reference_values, settings, region,
                                  forecast_date=forecast_date, method=method,
@@ -120,7 +120,7 @@ async def series_analog_values_best(
         settings: Annotated[config.Settings, Depends(get_settings)],
         number: int = 10):
     """
-    Get the precipitation values for the best analogs and for a given region, forecast_date, method, configuration, and entity.
+    Get the precipitation values for the best analogs and for a given region, forecast date, method, configuration, and entity.
     """
     return await _handle_request(get_series_analog_values_best, settings, region,
                                  forecast_date=forecast_date, method=method,
@@ -140,7 +140,7 @@ async def series_analog_values_percentiles(
         settings: Annotated[config.Settings, Depends(get_settings)],
         percentiles: List[int] = Query([20, 60, 90])):
     """
-    Get the precipitation values for the provided percentiles and for a given region, forecast_date, method, configuration, and entity.
+    Get the precipitation values for the provided percentiles and for a given region, forecast date, method, configuration, and entity.
     """
     return await _handle_request(get_series_analog_values_percentiles, settings, region,
                                  forecast_date=forecast_date, method=method,
@@ -161,7 +161,7 @@ async def series_analog_values_percentiles_history(
         percentiles: List[int] = Query([20, 60, 90]),
         number: int = 5):
     """
-    Get the precipitation values for the provided percentiles and for a given region, forecast_date, method, configuration, and entity.
+    Get the precipitation values for the provided percentiles and for a given region, forecast date, method, configuration, and entity.
     """
     return await _handle_request(get_series_analog_values_percentiles_history, settings,
                                  region, forecast_date=forecast_date, method=method,
@@ -169,7 +169,7 @@ async def series_analog_values_percentiles_history(
                                  percentiles=percentiles, number=number)
 
 
-@router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/{target_date}/analogs",
+@router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/{lead_time}/analogs",
             summary="Details of the analogs (rank, date, criteria, value) for a given forecast and entity",
             response_model=Analogs)
 async def analogs(
@@ -178,18 +178,18 @@ async def analogs(
         method: str,
         configuration: str,
         entity: int,
-        target_date: str,
+        lead_time: int|str,
         settings: Annotated[config.Settings, Depends(get_settings)]):
     """
-    Get the analogs for a given region, forecast_date, method, configuration, entity, and target_date.
+    Get the analogs for a given region, forecast date, method, configuration, entity, and lead time.
     """
     return await _handle_request(get_analogs, settings, region,
                                  forecast_date=forecast_date, method=method,
                                  configuration=configuration, entity=entity,
-                                 target_date=target_date)
+                                 lead_time=lead_time)
 
 
-@router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/{target_date}/analog-values",
+@router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/{lead_time}/analog-values",
     summary="Analog values for a given entity and target date",
     response_model=AnalogValues)
 async def analog_values(
@@ -198,18 +198,18 @@ async def analog_values(
         method: str,
         configuration: str,
         entity: int,
-        target_date: str,
+        lead_time: int|str,
         settings: Annotated[config.Settings, Depends(get_settings)]):
     """
-    Get the precipitation values for a given region, forecast_date, method, configuration, entity, target_date.
+    Get the precipitation values for a given region, forecast date, method, configuration, entity, lead time.
     """
     return await _handle_request(get_analog_values, settings, region,
                                  forecast_date=forecast_date, method=method,
                                  configuration=configuration, entity=entity,
-                                 target_date=target_date)
+                                 lead_time=lead_time)
 
 
-@router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/{target_date}/analog-values-percentiles",
+@router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/{lead_time}/analog-values-percentiles",
             summary="Values for one entity for a given quantile, forecast and target date",
             response_model=AnalogValuesPercentiles)
 async def analog_values_percentiles(
@@ -218,19 +218,19 @@ async def analog_values_percentiles(
         method: str,
         configuration: str,
         entity: int,
-        target_date: str,
+        lead_time: int|str,
         settings: Annotated[config.Settings, Depends(get_settings)],
         percentiles: List[int] = Query([20, 60, 90])):
     """
-    Get the precipitation values for a given region, forecast_date, method, configuration, entity, target_date, and percentile.
+    Get the precipitation values for a given region, forecast date, method, configuration, entity, lead time, and percentile.
     """
     return await _handle_request(get_analog_values_percentiles, settings, region,
                                  forecast_date=forecast_date, method=method,
                                  configuration=configuration, entity=entity,
-                                 target_date=target_date, percentiles=percentiles)
+                                 lead_time=lead_time, percentiles=percentiles)
 
 
-@router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/{target_date}/analog-values-best",
+@router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/{lead_time}/analog-values-best",
             summary="Values for one entity for a given quantile, forecast and target date",
             response_model=AnalogValues)
 async def analog_values_best(
@@ -239,13 +239,13 @@ async def analog_values_best(
         method: str,
         configuration: str,
         entity: int,
-        target_date: str,
+        lead_time: int|str,
         settings: Annotated[config.Settings, Depends(get_settings)],
         number: int = 10):
     """
-    Get the precipitation values for the best analogs and for a given region, forecast_date, method, configuration, entity, and target_date.
+    Get the precipitation values for the best analogs and for a given region, forecast date, method, configuration, entity, and lead time.
     """
     return await _handle_request(get_analog_values_best, settings, region,
                                  forecast_date=forecast_date, method=method,
                                  configuration=configuration, entity=entity,
-                                 target_date=target_date, number=number)
+                                 lead_time=lead_time, number=number)

@@ -34,31 +34,31 @@ async def _handle_request(func, settings: config.Settings, region: str, **kwargs
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
-@router.get("/{region}/{forecast_date}/{method}/{target_date}/analog-values-percentile/{percentile}",
+@router.get("/{region}/{forecast_date}/{method}/{lead_time}/analog-values-percentile/{percentile}",
             summary="Analog values for a given region, forecast_date, method, "
-                    "target_date, and percentile, aggregated by selecting the "
+                    "lead time, and percentile, aggregated by selecting the "
                     "relevant configuration per entity",
             response_model=EntitiesAnalogValuesPercentile)
 async def entities_analog_values_percentile(
         region: str,
         forecast_date: str,
         method: str,
-        target_date: str,
+        lead_time: int|str,
         percentile: int,
         settings: Annotated[config.Settings, Depends(get_settings)]):
     """
-    Get the analog dates for a given region, forecast_date, method, configuration, and target_date.
+    Get the analog dates for a given region, forecast_date, method, configuration, and lead_time.
     """
     return await _handle_request(get_entities_analog_values_percentile, settings,
                                  region, forecast_date=forecast_date, method=method,
-                                 target_date=target_date, percentile=percentile)
+                                 lead_time=lead_time, percentile=percentile)
 
 
 @router.get("/{region}/{forecast_date}/series-synthesis-per-method/{percentile}",
             summary="Largest values for a given region, forecast_date, method, "
                     "and percentile, aggregated by selecting the largest values for "
                     "the relevant configurations per entity",
-            response_model=SeriesSynthesisPerMethod)
+            response_model=List[SeriesSynthesisPerMethod])
 async def series_synthesis_per_method(
         region: str,
         forecast_date: str,
@@ -74,8 +74,8 @@ async def series_synthesis_per_method(
 
 @router.get("/{region}/{forecast_date}/series-synthesis-total/{percentile}",
             summary="Largest values for a given region, forecast_date, "
-                    "and percentile, aggregated by time steps")
-            #response_model=SeriesSynthesisPerMethod)
+                    "and percentile, aggregated by time steps",
+            response_model=List[SeriesSynthesisTotal])
 async def series_synthesis_total(
         region: str,
         forecast_date: str,

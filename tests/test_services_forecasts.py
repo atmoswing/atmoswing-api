@@ -9,7 +9,7 @@ async def test_get_analog_values():
     # /forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/3/2024-10-07/values
     result = await get_analog_values("./data", region="adn", forecast_date="2024-10-05",
                                      method="4Zo-CEP", configuration="Alpes_Nord",
-                                     entity=3, target_date="2024-10-07")
+                                     entity=3, lead_time="2024-10-07")
     result = result["values"]
 
     assert result == pytest.approx([0.5, 2.9, 59.6, 0.0, 23.8, 1.3, 83.1, 64.2, 9.3,
@@ -22,7 +22,7 @@ async def test_get_analog_dates():
     # /forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/2024-10-07/dates
     result = await get_analog_dates("./data", region="adn", forecast_date="2024-10-05",
                                     method="4Zo-CEP", configuration="Alpes_Nord",
-                                    target_date="2024-10-07")
+                                    lead_time="2024-10-07")
     result = result["dates"]
 
     assert result == [datetime(1993, 10, 11),
@@ -56,7 +56,7 @@ async def test_get_analog_criteria():
     # /forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/2024-10-07/dates
     result = await get_analog_criteria(
         "./data", region="adn", forecast_date="2024-10-05", method="4Zo-CEP",
-        configuration="Alpes_Nord", target_date="2024-10-07")
+        configuration="Alpes_Nord", lead_time="2024-10-07")
     result = result["criteria"]
 
     assert result == pytest.approx(
@@ -70,7 +70,7 @@ async def test_get_analogs():
     # /forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/3/2024-10-07/analogs
     result = await get_analogs("./data", region="adn", forecast_date="2024-10-05",
                                method="4Zo-CEP", configuration="Alpes_Nord",
-                               entity=3, target_date="2024-10-07")
+                               entity=3, lead_time="2024-10-07")
     result = result["analogs"]
 
     assert result[0]["date"] == datetime(1993, 10, 11)
@@ -173,7 +173,7 @@ async def test_get_entities_analog_values_percentile():
     # /forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/2024-10-07T00/entities-values-percentile/60
     result = await get_entities_analog_values_percentile(
         "./data", region="adn", forecast_date="2024-10-05", method="4Zo-CEP",
-        configuration="Alpes_Nord", target_date="2024-10-07", percentile=60)
+        configuration="Alpes_Nord", lead_time="2024-10-07", percentile=60)
 
     assert result["values"] == pytest.approx(
         [0.5, 1.1, 23.1, 2.2, 0.6, 9.9, 1.8, 5.5, 7.0], rel=5e-2)
@@ -184,19 +184,46 @@ async def test_get_analog_values_percentiles():
     # /forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/3/2024-10-07T00/analog-values-percentiles
     result = await get_analog_values_percentiles(
         "./data", region="adn", forecast_date="2024-10-05", method="4Zo-CEP",
-        configuration="Alpes_Nord", entity=3, target_date="2024-10-07",
+        configuration="Alpes_Nord", entity=3, lead_time="2024-10-07",
         percentiles=[20, 60, 90])
 
     assert result["percentiles"] == [20, 60, 90]
     assert result["values"] == pytest.approx(
         [0.93, 23.14, 67.00], rel=1e-2)
 
+
+@pytest.mark.asyncio
+async def test_get_analog_values_percentiles_lead_time_int():
+    # /forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/3/24/analog-values-percentiles
+    result = await get_analog_values_percentiles(
+        "./data", region="adn", forecast_date="2024-10-05", method="4Zo-CEP",
+        configuration="Alpes_Nord", entity=3, lead_time=48,
+        percentiles=[20, 60, 90])
+
+    assert result["percentiles"] == [20, 60, 90]
+    assert result["values"] == pytest.approx(
+        [0.93, 23.14, 67.00], rel=1e-2)
+
+
+@pytest.mark.asyncio
+async def test_get_analog_values_percentiles_lead_time_str():
+    # /forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/3/24/analog-values-percentiles
+    result = await get_analog_values_percentiles(
+        "./data", region="adn", forecast_date="2024-10-05", method="4Zo-CEP",
+        configuration="Alpes_Nord", entity=3, lead_time='48',
+        percentiles=[20, 60, 90])
+
+    assert result["percentiles"] == [20, 60, 90]
+    assert result["values"] == pytest.approx(
+        [0.93, 23.14, 67.00], rel=1e-2)
+
+
 @pytest.mark.asyncio
 async def test_get_analog_values_best():
     # /forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/3/2024-10-07T00/analog-values-best
     result = await get_analog_values_best(
         "./data", region="adn", forecast_date="2024-10-05", method="4Zo-CEP",
-        configuration="Alpes_Nord", entity=3, target_date="2024-10-07", number=10)
+        configuration="Alpes_Nord", entity=3, lead_time="2024-10-07", number=10)
 
     assert result["values"] == pytest.approx(
         [0.5, 2.9, 59.6, 0, 23.8, 1.3, 83.1, 64.2, 9.3, 37.1], rel=1e-2)

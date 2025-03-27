@@ -19,52 +19,52 @@ async def get_reference_values(data_dir: str, region: str, forecast_date: str,
 
 
 async def get_analogs(data_dir: str, region: str, forecast_date: str, method: str,
-                      configuration: str, entity: int, target_date: str):
+                      configuration: str, entity: int, lead_time: int|str):
     """
     Get the analogs for a given region, forecast date, method, configuration, entity,
     and target date.
     """
     region_path = utils.check_region_path(data_dir, region)
     return await asyncio.to_thread(_get_analogs, region_path, forecast_date, method,
-                                   configuration, entity, target_date)
+                                   configuration, entity, lead_time)
 
 
 async def get_analog_dates(data_dir: str, region: str, forecast_date: str, method: str,
-                           configuration: str, target_date: str):
+                           configuration: str, lead_time: int|str):
     """
     Get the analog dates for a given region, date, method, configuration,
     and target date.
     """
     region_path = utils.check_region_path(data_dir, region)
     return await asyncio.to_thread(_get_analog_dates, region_path, forecast_date,
-                                   method, configuration, target_date)
+                                   method, configuration, lead_time)
 
 
 async def get_analog_criteria(data_dir: str, region: str, forecast_date: str,
-                              method: str, configuration: str, target_date: str):
+                              method: str, configuration: str, lead_time: int|str):
     """
     Get the analog criteria for a given region, date, method, configuration,
     and target date.
     """
     region_path = utils.check_region_path(data_dir, region)
     return await asyncio.to_thread(_get_analog_criteria, region_path, forecast_date,
-                                   method, configuration, target_date)
+                                   method, configuration, lead_time)
 
 
 async def get_analog_values(data_dir: str, region: str, forecast_date: str, method: str,
-                            configuration: str, entity: int, target_date: str):
+                            configuration: str, entity: int, lead_time: int|str):
     """
     Get the precipitation values for a given region, date, method, configuration,
     and entity.
     """
     region_path = utils.check_region_path(data_dir, region)
     return await asyncio.to_thread(_get_analog_values, region_path, forecast_date,
-                                   method, configuration, entity, target_date)
+                                   method, configuration, entity, lead_time)
 
 
 async def get_analog_values_percentiles(data_dir: str, region: str, forecast_date: str,
                                         method: str, configuration: str, entity: int,
-                                        target_date: str, percentiles: list[int]):
+                                        lead_time: int|str, percentiles: list[int]):
     """
     Get the precipitation values for specific percentiles for a given region, date,
     method, configuration, and entity.
@@ -72,24 +72,24 @@ async def get_analog_values_percentiles(data_dir: str, region: str, forecast_dat
     region_path = utils.check_region_path(data_dir, region)
     return await asyncio.to_thread(_get_analog_values_percentiles, region_path,
                                    forecast_date, method, configuration, entity,
-                                   target_date, percentiles)
+                                   lead_time, percentiles)
 
 
 async def get_analog_values_best(data_dir: str, region: str, forecast_date: str,
                                  method: str, configuration: str, entity: int,
-                                 target_date: str, number: int):
+                                 lead_time: int|str, number: int):
     """
     Get the precipitation values for the best analogs for a given region, date, method,
     configuration, and entity.
     """
     region_path = utils.check_region_path(data_dir, region)
     return await asyncio.to_thread(_get_analog_values_best, region_path, forecast_date,
-                                   method, configuration, entity, target_date, number)
+                                   method, configuration, entity, lead_time, number)
 
 
 async def get_entities_analog_values_percentile(data_dir: str, region: str,
                                                 forecast_date: str, method: str,
-                                                configuration: str, target_date: str,
+                                                configuration: str, lead_time: int|str,
                                                 percentile: int):
     """
     Get the precipitation values for a given region, date, method, configuration,
@@ -98,7 +98,7 @@ async def get_entities_analog_values_percentile(data_dir: str, region: str,
     region_path = utils.check_region_path(data_dir, region)
     return await asyncio.to_thread(_get_entities_analog_values_percentile, region_path,
                                    forecast_date, method, configuration,
-                                   target_date, percentile)
+                                   lead_time, percentile)
 
 
 async def get_series_analog_values_best(data_dir: str, region: str, forecast_date: str,
@@ -162,13 +162,15 @@ def _get_reference_values(region_path: str, forecast_date: str, method: str,
 
 
 def _get_analogs(region_path: str, forecast_date: str, method: str, configuration: str,
-                 entity: int, target_date: str):
+                 entity: int, lead_time: int|str):
     """
     Synchronous function to get the analogs from the netCDF file.
     """
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"File not found: {file_path}")
+
+    target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
     with xr.open_dataset(file_path) as ds:
         entity_idx = utils.get_entity_index(ds, entity)
@@ -188,13 +190,15 @@ def _get_analogs(region_path: str, forecast_date: str, method: str, configuratio
 
 
 def _get_analog_dates(region_path: str, forecast_date: str, method: str,
-                      configuration: str, target_date: str):
+                      configuration: str, lead_time: int|str):
     """
     Synchronous function to get the analog dates from the netCDF file.
     """
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"File not found: {file_path}")
+
+    target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
     with xr.open_dataset(file_path) as ds:
         start_idx, end_idx = utils.get_row_indices(ds, target_date)
@@ -205,13 +209,15 @@ def _get_analog_dates(region_path: str, forecast_date: str, method: str,
 
 
 def _get_analog_criteria(region_path: str, forecast_date: str, method: str,
-                         configuration: str, target_date: str):
+                         configuration: str, lead_time: int|str):
     """
     Synchronous function to get the analog criteria from the netCDF file.
     """
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"File not found: {file_path}")
+
+    target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
     with (xr.open_dataset(file_path) as ds):
         start_idx, end_idx = utils.get_row_indices(ds, target_date)
@@ -222,13 +228,15 @@ def _get_analog_criteria(region_path: str, forecast_date: str, method: str,
 
 
 def _get_analog_values(region_path: str, forecast_date: str, method: str,
-                       configuration: str, entity: int, target_date: str):
+                       configuration: str, entity: int, lead_time: int|str):
     """
     Synchronous function to get the precipitation values from the netCDF file.
     """
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"File not found: {file_path}")
+
+    target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
     with xr.open_dataset(file_path) as ds:
         entity_idx = utils.get_entity_index(ds, entity)
@@ -240,7 +248,7 @@ def _get_analog_values(region_path: str, forecast_date: str, method: str,
 
 
 def _get_analog_values_percentiles(region_path: str, forecast_date: str, method: str,
-                                   configuration: str, entity: int, target_date: str,
+                                   configuration: str, entity: int, lead_time: int|str,
                                    percentiles: list[int]):
     """
     Synchronous function to get the precipitation values for specific percentiles
@@ -249,6 +257,8 @@ def _get_analog_values_percentiles(region_path: str, forecast_date: str, method:
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"File not found: {file_path}")
+
+    target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
     with xr.open_dataset(file_path) as ds:
         entity_idx = utils.get_entity_index(ds, entity)
@@ -266,7 +276,7 @@ def _get_analog_values_percentiles(region_path: str, forecast_date: str, method:
 
 
 def _get_analog_values_best(region_path: str, forecast_date: str, method: str,
-                            configuration: str, entity: int, target_date: str,
+                            configuration: str, entity: int, lead_time: int|str,
                             number: int):
     """
     Synchronous function to get the precipitation values for the best analogs
@@ -275,6 +285,8 @@ def _get_analog_values_best(region_path: str, forecast_date: str, method: str,
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"File not found: {file_path}")
+
+    target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
     with xr.open_dataset(file_path) as ds:
         entity_idx = utils.get_entity_index(ds, entity)
@@ -288,7 +300,7 @@ def _get_analog_values_best(region_path: str, forecast_date: str, method: str,
 
 def _get_entities_analog_values_percentile(region_path: str, forecast_date: str,
                                            method: str, configuration: str,
-                                           target_date: str, percentile: int):
+                                           lead_time: int|str, percentile: int):
     """
     Synchronous function to get the precipitation values for a specific percentile
     from the netCDF file.
@@ -296,6 +308,8 @@ def _get_entities_analog_values_percentile(region_path: str, forecast_date: str,
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"File not found: {file_path}")
+
+    target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
     with xr.open_dataset(file_path) as ds:
         start_idx, end_idx = utils.get_row_indices(ds, target_date)

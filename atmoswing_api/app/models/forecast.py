@@ -108,3 +108,13 @@ class SeriesSynthesisPerMethod(BaseModel):
     @field_validator("values")
     def round_values(cls, v: List[float]) -> List[float]:
         return [round(float(value), 2) for value in v]
+
+
+class SeriesSynthesisTotal(BaseModel):
+    time_step: int
+    target_dates: List[datetime]
+    values: List[float]
+
+    @field_validator("values")
+    def round_values(cls, v: List[float]) -> List[float]:
+        return [round(float(value), 2) for value in v]
