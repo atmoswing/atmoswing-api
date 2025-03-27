@@ -211,16 +211,13 @@ async def test_get_series_analog_values_percentiles_history():
         "./data", region="adn", forecast_date="2024-10-06T18", method="4Zo-GFS",
         configuration="Alpes_Nord", entity=3, percentiles=[20, 60, 90], number=5)
 
-    assert result["forecast_dates"] == [
-        datetime(2024, 10, 6, 12),
-        datetime(2024, 10, 6, 6),
-        datetime(2024, 10, 6, 0),
-        datetime(2024, 10, 5, 18),
-        datetime(2024, 10, 5, 12),
-    ]
-
-    assert len(result["forecasts"]) == 5
-    assert len(result["forecasts"][0]["series_percentiles"]) == 3
-    assert result["forecasts"][0]["series_percentiles"][0]["percentile"] == 20
-    assert result["forecasts"][0]["series_percentiles"][1]["percentile"] == 60
-    assert result["forecasts"][0]["series_percentiles"][2]["percentile"] == 90
+    assert len(result["past_forecasts"]) == 5
+    assert len(result["past_forecasts"][0]["series_percentiles"]) == 3
+    assert result["past_forecasts"][0]["forecast_date"] == datetime(2024, 10, 6, 12)
+    assert result["past_forecasts"][1]["forecast_date"] == datetime(2024, 10, 6, 6)
+    assert result["past_forecasts"][2]["forecast_date"] == datetime(2024, 10, 6, 0)
+    assert result["past_forecasts"][3]["forecast_date"] == datetime(2024, 10, 5, 18)
+    assert result["past_forecasts"][4]["forecast_date"] == datetime(2024, 10, 5, 12)
+    assert result["past_forecasts"][0]["series_percentiles"][0]["percentile"] == 20
+    assert result["past_forecasts"][0]["series_percentiles"][1]["percentile"] == 60
+    assert result["past_forecasts"][0]["series_percentiles"][2]["percentile"] == 90
