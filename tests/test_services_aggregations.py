@@ -17,9 +17,9 @@ async def test_get_entities_analog_values_percentile():
 
 
 @pytest.mark.asyncio
-async def test_get_series_largest_percentile_entities():
+async def test_get_series_synthesis_per_method():
     # /aggregations/adn/2024-10-05T00/largest-analog-values/60
-    result = await get_series_largest_percentile_entities(
+    result = await get_series_synthesis_per_method(
         "./data", region="adn", forecast_date="2024-10-05", percentile=90)
 
     assert len(result) == 6
@@ -50,3 +50,17 @@ async def test_get_series_largest_percentile_entities():
     ]
     assert result[idx_4Zo_GFS]["values"] == pytest.approx(
         [0.60, 21.72, 60.28, 61.00, 61.05, 27.99, 14.10, 24.25], rel=1e-2)
+
+
+@pytest.mark.asyncio
+async def test_get_series_synthesis_total():
+    # /aggregations/adn/2024-10-05T00/largest-analog-values/60
+    result = await get_series_synthesis_total(
+        "./data", region="adn", forecast_date="2024-10-05", percentile=90)
+
+    assert len(result) == 2
+    assert result[0]["time_step"] == 6
+    assert result[1]["time_step"] == 24
+    assert result[1]["values"][1] == pytest.approx(34.8, rel=1e-2)
+    assert result[1]["values"][2] == pytest.approx(92.06, rel=1e-2)
+    assert result[1]["values"][3] == pytest.approx(61, rel=1e-2)

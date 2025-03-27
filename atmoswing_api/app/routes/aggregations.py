@@ -54,12 +54,12 @@ async def entities_analog_values_percentile(
                                  target_date=target_date, percentile=percentile)
 
 
-@router.get("/{region}/{forecast_date}/largest-analog-values/{percentile}",
-            summary="Largest analog values for a given region, forecast_date, "
+@router.get("/{region}/{forecast_date}/series-synthesis-per-method/{percentile}",
+            summary="Largest values for a given region, forecast_date, method, "
                     "and percentile, aggregated by selecting the largest values for "
-                    "the relevant configurations per entity")
-            #response_model=EntitiesAnalogValuesPercentile)
-async def series_largest_percentile_entities(
+                    "the relevant configurations per entity",
+            response_model=SeriesSynthesisPerMethod)
+async def series_synthesis_per_method(
         region: str,
         forecast_date: str,
         percentile: int,
@@ -67,6 +67,23 @@ async def series_largest_percentile_entities(
     """
     Get the largest analog values for a given region, forecast_date, and percentile.
     """
-    return await _handle_request(get_series_largest_percentile_entities, settings,
+    return await _handle_request(get_series_synthesis_per_method, settings,
+                                 region, forecast_date=forecast_date,
+                                 percentile=percentile)
+
+
+@router.get("/{region}/{forecast_date}/series-synthesis-total/{percentile}",
+            summary="Largest values for a given region, forecast_date, "
+                    "and percentile, aggregated by time steps")
+            #response_model=SeriesSynthesisPerMethod)
+async def series_synthesis_total(
+        region: str,
+        forecast_date: str,
+        percentile: int,
+        settings: Annotated[config.Settings, Depends(get_settings)]):
+    """
+    Get the largest analog values for a given region, forecast_date, and percentile.
+    """
+    return await _handle_request(get_series_synthesis_total, settings,
                                  region, forecast_date=forecast_date,
                                  percentile=percentile)
