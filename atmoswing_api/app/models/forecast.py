@@ -82,16 +82,17 @@ class SeriesAnalogValuesPercentile(BaseModel):
 
 
 class SeriesAnalogValuesPercentiles(BaseModel):
+    forecast_date: datetime
+    target_dates: List[datetime]
     series_percentiles: List[SeriesAnalogValuesPercentile]
 
 
 class SeriesAnalogValuesPercentilesHistory(BaseModel):
-    forecast_dates: List[datetime]
-    forecasts: List[SeriesAnalogValuesPercentiles]
+    past_forecasts: List[SeriesAnalogValuesPercentiles]
 
 
 class EntitiesAnalogValuesPercentile(BaseModel):
-    entity_ids: int
+    entity_ids: List[int]
     values: List[float]
 
     @field_validator("values")

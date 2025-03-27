@@ -351,6 +351,9 @@ def _get_series_analog_values_percentiles(region_path: str, forecast_date: str,
         entity_idx = _get_entity_index(ds, entity)
         analogs_nb = ds.analogs_nb.values
         series_values = np.zeros((len(percentiles), len(analogs_nb)))
+        target_dates = [np.datetime64(date).astype('datetime64[s]').item() for date in
+                        ds.target_dates.values]
+
         for analog_idx in range(len(analogs_nb)):
             start_idx = int(np.sum(analogs_nb[:analog_idx]))
             end_idx = start_idx + int(analogs_nb[analog_idx])
@@ -371,7 +374,9 @@ def _get_series_analog_values_percentiles(region_path: str, forecast_date: str,
             {"percentile": pc,
              "series_values": series_values[i_pc, :].tolist()})
 
-    return {"series_percentiles": output}
+    return {"forecast_date": utils.convert_to_datetime(forecast_date),
+            "target_dates": target_dates,
+            "series_percentiles": output}
 
 
 def _get_series_analog_values_percentiles_history(region_path: str, forecast_date: str,
@@ -386,7 +391,6 @@ def _get_series_analog_values_percentiles_history(region_path: str, forecast_dat
     dt = utils.convert_to_datetime(forecast_date)
     counter_found = 0
     counter_tot = 0
-    forecast_dates = []
     forecasts = []
     while True:
         if counter_found >= number:
@@ -405,13 +409,10 @@ def _get_series_analog_values_percentiles_history(region_path: str, forecast_dat
         series_percentiles = _get_series_analog_values_percentiles(
             region_path, dt_str, method, configuration, entity, percentiles)
 
-        forecast_dates.append(dt)
         forecasts.append(series_percentiles)
         counter_found += 1
 
-
-
-    return {"forecast_dates": forecast_dates, "forecasts": forecasts}
+    return {"past_forecasts": forecasts}
 
 
 def _get_row_indices(ds, target_date):
