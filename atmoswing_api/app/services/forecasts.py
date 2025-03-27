@@ -350,7 +350,7 @@ def _get_series_analog_values_percentiles(region_path: str, forecast_date: str,
     with xr.open_dataset(file_path) as ds:
         entity_idx = utils.get_entity_index(ds, entity)
         analogs_nb = ds.analogs_nb.values
-        series_values = np.zeros((len(percentiles), len(analogs_nb)))
+        series_values = np.ones((len(percentiles), len(analogs_nb))) * np.nan
         target_dates = [np.datetime64(date).astype('datetime64[s]').item() for date in
                         ds.target_dates.values]
 

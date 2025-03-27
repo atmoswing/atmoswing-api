@@ -52,3 +52,21 @@ async def entities_analog_values_percentile(
     return await _handle_request(get_entities_analog_values_percentile, settings,
                                  region, forecast_date=forecast_date, method=method,
                                  target_date=target_date, percentile=percentile)
+
+
+@router.get("/{region}/{forecast_date}/largest-analog-values/{percentile}",
+            summary="Largest analog values for a given region, forecast_date, "
+                    "and percentile, aggregated by selecting the largest values for "
+                    "the relevant configurations per entity")
+            #response_model=EntitiesAnalogValuesPercentile)
+async def series_largest_percentile_entities(
+        region: str,
+        forecast_date: str,
+        percentile: int,
+        settings: Annotated[config.Settings, Depends(get_settings)]):
+    """
+    Get the largest analog values for a given region, forecast_date, and percentile.
+    """
+    return await _handle_request(get_series_largest_percentile_entities, settings,
+                                 region, forecast_date=forecast_date,
+                                 percentile=percentile)
