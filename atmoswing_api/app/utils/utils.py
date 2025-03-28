@@ -4,7 +4,7 @@ import numpy as np
 from datetime import datetime, date, timedelta
 
 
-def check_region_path(data_dir, region) -> str:
+def check_region_path(data_dir: str, region: str) -> str:
     region_path = f"{data_dir}/{region}"
     if not os.path.exists(region_path):
         raise FileNotFoundError(f"Region directory not found: {region}")

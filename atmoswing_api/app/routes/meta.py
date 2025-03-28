@@ -5,7 +5,7 @@ from typing_extensions import Annotated
 from typing import List
 
 import config
-from app.services.meta import get_last_forecast_date_from_files, \
+from app.services.meta import get_last_forecast_date, \
     get_method_list, get_method_configs_list, get_entities_list
 from app.models.meta import Entity, Method, MethodConfig
 
@@ -31,13 +31,13 @@ async def _handle_request(func, settings: config.Settings, region: str, **kwargs
 
 @router.get("/{region}/last-forecast-date",
             summary="Last available forecast date")
-async def get_last_forecast_date(
+async def last_forecast_date(
         region: str,
         settings: Annotated[config.Settings, Depends(get_settings)]):
     """
     Get the last available forecast date for a given region.
     """
-    return await _handle_request(get_last_forecast_date_from_files, settings, region)
+    return await _handle_request(get_last_forecast_date, settings, region)
 
 
 @router.get("/{region}/{forecast_date}/methods",

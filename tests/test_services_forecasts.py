@@ -23,7 +23,7 @@ async def test_get_analog_values():
 
 @pytest.mark.asyncio
 async def test_get_analog_dates():
-    # /forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/2024-10-07/dates
+    # /forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/2024-10-07/analog-dates
     result = await get_analog_dates(data_dir, region="adn", forecast_date="2024-10-05",
                                     method="4Zo-CEP", configuration="Alpes_Nord",
                                     lead_time="2024-10-07")

@@ -8,16 +8,15 @@ import asyncio
 from ..utils import utils
 
 
-async def get_entities_analog_values_percentile(data_dir: str, region: str,
-                                                forecast_date: str, method: str,
-                                                lead_time: int|str, percentile: int):
+async def get_entities_analog_values_percentile(
+        data_dir: str, region: str, forecast_date: str, method: str, lead_time: int|str,
+        percentile: int):
     """
     Get the precipitation values for a given region, date, method, configuration,
     target date, and percentile.
     """
-    region_path = utils.check_region_path(data_dir, region)
     return await asyncio.to_thread(_get_entities_analog_values_percentile,
-                                   region_path, forecast_date, method,
+                                   data_dir, region, forecast_date, method,
                                    lead_time, percentile)
 
 
@@ -26,8 +25,7 @@ async def get_series_synthesis_per_method(data_dir: str, region: str,
     """
     Get the largest values per method for a given region, date, and percentile.
     """
-    region_path = utils.check_region_path(data_dir, region)
-    return await asyncio.to_thread(_get_series_synthesis_per_method, region_path,
+    return await asyncio.to_thread(_get_series_synthesis_per_method, data_dir, region,
                                    forecast_date, percentile)
 
 
@@ -36,18 +34,18 @@ async def get_series_synthesis_total(data_dir: str, region: str,
     """
     Get the largest values for a given region, date, and percentile.
     """
-    region_path = utils.check_region_path(data_dir, region)
-    return await asyncio.to_thread(_get_series_synthesis_total, region_path,
+    return await asyncio.to_thread(_get_series_synthesis_total, data_dir, region,
                                    forecast_date, percentile)
 
 
-def _get_entities_analog_values_percentile(region_path: str, forecast_date: str,
-                                           method: str, lead_time: int|str,
-                                           percentile: int):
+def _get_entities_analog_values_percentile(
+        data_dir: str, region: str, forecast_date: str, method: str, lead_time: int|str,
+        percentile: int):
     """
     Synchronous function to get the precipitation values for a specific percentile
     from the netCDF file.
     """
+    region_path = utils.check_region_path(data_dir, region)
     pattern = utils.get_files_pattern(region_path, forecast_date, method)
     files = sorted(glob.glob(pattern))
 
@@ -88,12 +86,13 @@ def _get_entities_analog_values_percentile(region_path: str, forecast_date: str,
     return {"entity_ids": all_station_ids, "values": values.tolist()}
 
 
-def _get_series_synthesis_per_method(region_path: str, forecast_date: str,
+def _get_series_synthesis_per_method(data_dir: str, region: str, forecast_date: str,
                                      percentile: int):
     """
     Synchronous function to get the largest analog values for a given region, date,
     and percentile.
     """
+    region_path = utils.check_region_path(data_dir, region)
     pattern = utils.get_files_pattern(region_path, forecast_date)
     files = sorted(glob.glob(pattern))
 
@@ -150,14 +149,15 @@ def _get_series_synthesis_per_method(region_path: str, forecast_date: str,
     return largest_values
 
 
-def _get_series_synthesis_total(region_path: str, forecast_date: str,
+def _get_series_synthesis_total(data_dir: str, region: str, forecast_date: str,
                                 percentile: int):
     """
     Synchronous function to get the largest analog values for a given region, date,
     and percentile.
     """
+    region_path = utils.check_region_path(data_dir, region)
     largest_values_per_method = _get_series_synthesis_per_method(
-        region_path, forecast_date, percentile)
+        data_dir, region, forecast_date, percentile)
 
     # Aggregate the values across methods but separate different time steps
     output = []

@@ -2,7 +2,7 @@ import pytest
 import os
 from unittest.mock import patch, MagicMock
 
-from atmoswing_api.app.services.meta import get_last_forecast_date_from_files, \
+from atmoswing_api.app.services.meta import get_last_forecast_date, \
     _get_last_forecast_date, get_method_list, _get_methods_from_netcdf, \
     get_method_configs_list, get_entities_list
 
@@ -14,25 +14,24 @@ data_dir = os.path.join(cwd, "data")
 @pytest.mark.asyncio
 @patch("atmoswing_api.app.services.meta._get_last_forecast_date")
 @patch("atmoswing_api.app.utils.utils.check_region_path")
-async def test_get_last_forecast_date_from_files_mock(mock_check_region_path, mock_get_last_forecast_date):
+async def test_get_last_forecast_date_from_files_mock(mock_check_region_path,
+                                                      mock_get_last_forecast_date):
     # Mock check_region_path
     mock_check_region_path.return_value = "/mocked/region/path"
 
     # Mock _get_last_forecast_date
     mock_get_last_forecast_date.return_value = "2023-01-01T12"
 
-    result = await get_last_forecast_date_from_files("/mocked/data_dir", "region")
+    result = await get_last_forecast_date("/mocked/data_dir", "region")
 
-    assert result == {"last_forecast_date": "2023-01-01T12"}
-    mock_check_region_path.assert_called_once_with("/mocked/data_dir", "region")
-    mock_get_last_forecast_date.assert_called_once_with("/mocked/region/path")
+    assert result == "2023-01-01T12"
 
 
 @pytest.mark.asyncio
 async def test_get_last_forecast_date_from_files():
-    result = await get_last_forecast_date_from_files(data_dir, "adn")
+    result = await get_last_forecast_date(data_dir, "adn")
 
-    assert result == {"last_forecast_date": "2024-10-06T18"}
+    assert result == {'region': 'adn', 'last_forecast_date': '2024-10-06T18'}
 
 
 @patch("os.listdir")
@@ -49,8 +48,8 @@ def test_get_last_forecast_date_mock(mock_convert_to_datetime, mock_listdir):
     # Mock convert_to_datetime to pass the validation
     mock_convert_to_datetime.return_value = None
 
-    region_path = "/mocked/region/path"
-    result = _get_last_forecast_date(region_path)
+    region_path = "/mocked_path/region"
+    result = _get_last_forecast_date("/mocked_path", "region")
 
     assert result == "2023-01-01T12"
     mock_listdir.assert_any_call(f"{region_path}")
@@ -65,8 +64,8 @@ def test_get_last_forecast_date_no_subdirs(mock_listdir):
     # Mock os.listdir to return an empty list
     mock_listdir.return_value = []
 
-    with pytest.raises(ValueError, match="No subdirectories found in /mocked/region/path"):
-        _get_last_forecast_date("/mocked/region/path")
+    with pytest.raises(ValueError, match="No subdirectories found in /mocked_path/region"):
+        _get_last_forecast_date("/mocked_path", "region")
 
 
 @patch("os.listdir")
@@ -79,8 +78,8 @@ def test_get_last_forecast_date_no_files(mock_listdir):
         []  # No files
     ]
 
-    with pytest.raises(ValueError, match="No files found in /mocked/region/path/2023/01/01"):
-        _get_last_forecast_date("/mocked/region/path")
+    with pytest.raises(ValueError, match="No files found in /mocked_path/region/2023/01/01"):
+        _get_last_forecast_date("/mocked_path", "region")
 
 
 @patch("os.listdir")
@@ -171,7 +170,7 @@ def test_get_methods_from_netcdf_no_files(mock_list_files):
     mock_list_files.return_value = []
 
     with pytest.raises(FileNotFoundError, match="No files found for date: 2023-01-01"):
-        _get_methods_from_netcdf("/mocked/region/path", "2023-01-01")
+        _get_methods_from_netcdf("/mocked_path", "region","2023-01-01")
 
 
 @pytest.mark.asyncio
@@ -182,7 +181,7 @@ async def test_get_method_configs_list_mock(
     mock_check_region_path, mock_list_files, mock_open_dataset
 ):
     # Mock check_region_path to return a mocked path
-    mock_check_region_path.return_value = "/mocked/region/path"
+    mock_check_region_path.return_value = "/mocked_path/region"
 
     # Mock list_files to return mocked file paths
     mock_list_files.return_value = ["/mocked/file1.nc", "/mocked/file2.nc", "/mocked/file3.nc"]

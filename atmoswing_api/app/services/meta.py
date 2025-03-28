@@ -5,14 +5,11 @@ import os
 from ..utils import utils
 
 
-async def get_last_forecast_date_from_files(data_dir: str, region: str):
+async def get_last_forecast_date(data_dir: str, region: str):
     """
     Get the last available forecast date for a given region.
     """
-    region_path = utils.check_region_path(data_dir, region)
-    last_forecast_date = await asyncio.to_thread(_get_last_forecast_date, region_path)
-
-    return {"last_forecast_date": last_forecast_date}
+    return await asyncio.to_thread(_get_last_forecast_date, data_dir, region)
 
 
 async def get_method_list(data_dir: str, region: str, forecast_date: str):
@@ -20,8 +17,7 @@ async def get_method_list(data_dir: str, region: str, forecast_date: str):
     Get the list of available method types for a given region.
     Simulate async reading by using asyncio to run blocking I/O functions
     """
-    region_path = utils.check_region_path(data_dir, region)
-    return await asyncio.to_thread(_get_methods_from_netcdf, region_path,
+    return await asyncio.to_thread(_get_methods_from_netcdf, data_dir, region,
                                    forecast_date)
 
 
@@ -30,8 +26,7 @@ async def get_method_configs_list(data_dir: str, region: str, forecast_date: str
     Get the list of available method types and configurations for a given region.
     Simulate async reading by using asyncio to run blocking I/O functions
     """
-    region_path = utils.check_region_path(data_dir, region)
-    return await asyncio.to_thread(_get_method_configs_from_netcdf, region_path,
+    return await asyncio.to_thread(_get_method_configs_from_netcdf, data_dir, region,
                                    forecast_date)
 
 
@@ -40,16 +35,16 @@ async def get_entities_list(data_dir: str, region: str, forecast_date: str, meth
     """
     Get the list of available entities for a given region, forecast_date, method, and configuration.
     """
-    region_path = utils.check_region_path(data_dir, region)
-    return await asyncio.to_thread(_get_entities_from_netcdf, region_path,
+    return await asyncio.to_thread(_get_entities_from_netcdf, data_dir, region,
                                    forecast_date, method, configuration)
 
 
-def _get_last_forecast_date(region_path: str):
+def _get_last_forecast_date(data_dir: str, region: str):
     """
     Synchronous function to get the last forecast date from the filenames.
     Directory structure: region_path/YYYY/MM/DD/YYYY-MM-DD_HH.method.region.nc
     """
+    region_path = utils.check_region_path(data_dir, region)
 
     def get_latest_subdir(path):
         subdirs = sorted(os.listdir(path), reverse=True)
@@ -79,10 +74,15 @@ def _get_last_forecast_date(region_path: str):
     # Check that the forecast date is valid
     _ = utils.convert_to_datetime(last_forecast_date)
 
-    return last_forecast_date
+    return {
+        "region": region,
+        "last_forecast_date": last_forecast_date
+    }
 
 
-def _get_methods_from_netcdf(region_path: str, forecast_date: str):
+def _get_methods_from_netcdf(data_dir: str, region: str, forecast_date: str):
+    region_path = utils.check_region_path(data_dir, region)
+
     # Synchronous function to get methods from the NetCDF file
     if forecast_date == 'latest':
         forecast_date = _get_last_forecast_date(region_path)
@@ -108,7 +108,9 @@ def _get_methods_from_netcdf(region_path: str, forecast_date: str):
     return methods
 
 
-def _get_method_configs_from_netcdf(region_path: str, forecast_date: str):
+def _get_method_configs_from_netcdf(data_dir: str, region: str, forecast_date: str):
+    region_path = utils.check_region_path(data_dir, region)
+
     # Synchronous function to get method configurations from the NetCDF file
     if forecast_date == 'latest':
         forecast_date = _get_last_forecast_date(region_path)
@@ -144,8 +146,10 @@ def _get_method_configs_from_netcdf(region_path: str, forecast_date: str):
     return method_configs
 
 
-def _get_entities_from_netcdf(region_path: str, forecast_date: str, method: str,
+def _get_entities_from_netcdf(data_dir: str, region: str, forecast_date: str, method: str,
                               configuration: str):
+    region_path = utils.check_region_path(data_dir, region)
+
     # Synchronous function to get entities from the NetCDF file
     if forecast_date == 'latest':
         forecast_date = _get_last_forecast_date(region_path)
