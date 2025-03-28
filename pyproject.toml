@@ -1,6 +1,6 @@
 [project]
 name = "atmoswing-api"
-version = "0.1.0"
+version = "0.9.1"
 description = "A web forecast API for Atmoswing"
 requires-python = ">=3.10"
 authors = [
