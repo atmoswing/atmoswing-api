@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from typing_extensions import Annotated
 
 import config
-from app.models.forecast import *
+from app.models.models import *
 from app.services.aggregations import *
 
 router = APIRouter()

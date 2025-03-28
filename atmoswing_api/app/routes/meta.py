@@ -7,7 +7,7 @@ from typing import List
 import config
 from app.services.meta import get_last_forecast_date, \
     get_method_list, get_method_configs_list, get_entities_list
-from app.models.meta import Entity, Method, MethodConfig
+from app.models.models import *
 
 router = APIRouter()
 
