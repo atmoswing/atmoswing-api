@@ -8,3 +8,4 @@ python-dotenv
 dask
 pytest
 pytest-asyncio
+httpx
