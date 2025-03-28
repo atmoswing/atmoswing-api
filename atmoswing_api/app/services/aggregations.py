@@ -83,7 +83,17 @@ def _get_entities_analog_values_percentile(
             values[station_indices] = [float(np.interp(percentile / 100, freq, values_sorted[i, :])) for i in
                       range(n_entities)]
 
-    return {"entity_ids": all_station_ids, "values": values.tolist()}
+    return {
+        "parameters": {
+            "region": region,
+            "forecast_date": utils.convert_to_datetime(forecast_date),
+            "target_date": target_date,
+            "method": method,
+            "percentile": percentile,
+        },
+        "entity_ids": all_station_ids,
+        "values": values.tolist()
+    }
 
 
 def _get_series_synthesis_per_method(data_dir: str, region: str, forecast_date: str,
@@ -146,7 +156,14 @@ def _get_series_synthesis_per_method(data_dir: str, region: str, forecast_date: 
                     largest_values[method_idx]["values"][lead_time_idx],
                     max_percentile))
 
-    return largest_values
+    return {
+        "parameters": {
+            "region": region,
+            "forecast_date": utils.convert_to_datetime(forecast_date),
+            "percentile": percentile,
+        },
+        "series_percentiles": largest_values
+    }
 
 
 def _get_series_synthesis_total(data_dir: str, region: str, forecast_date: str,
@@ -199,7 +216,14 @@ def _get_series_synthesis_total(data_dir: str, region: str, forecast_date: str,
                 output[lead_time_idx]["values"][i],
                 method["values"][i])
 
-    return output
+    return {
+        "parameters": {
+            "region": region,
+            "forecast_date": utils.convert_to_datetime(forecast_date),
+            "percentile": percentile,
+        },
+        "series_percentiles": output
+    }
 
 
 def _get_relevant_stations_idx(ds):

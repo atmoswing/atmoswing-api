@@ -143,9 +143,17 @@ def _get_reference_values(data_dir: str, region: str, forecast_date: str, method
         axis = ds.reference_axis.values.tolist()
         values = ds.reference_values[entity_idx, :].astype(float).values.tolist()
 
-    reference_values = {"axis": axis, "values": values}
-
-    return reference_values
+    return {
+        "parameters": {
+            "region": region,
+            "forecast_date": utils.convert_to_datetime(forecast_date),
+            "method": method,
+            "configuration": configuration,
+            "entity_id": entity,
+        },
+        "reference_axis": axis,
+        "reference_values": values
+    }
 
 
 def _get_analogs(data_dir: str, region: str, forecast_date: str, method: str,
@@ -174,7 +182,17 @@ def _get_analogs(data_dir: str, region: str, forecast_date: str, method: str,
                    for date, criteria, value, rank in
                    zip(analog_dates, analog_criteria, values, ranks)]
 
-    return {"analogs": analogs}
+    return {
+        "parameters": {
+            "region": region,
+            "forecast_date": utils.convert_to_datetime(forecast_date),
+            "target_date": target_date,
+            "method": method,
+            "configuration": configuration,
+            "entity_id": entity,
+        },
+        "analogs": analogs
+    }
 
 
 def _get_analog_dates(data_dir: str, region: str, forecast_date: str, method: str,
@@ -194,7 +212,16 @@ def _get_analog_dates(data_dir: str, region: str, forecast_date: str, method: st
         analog_dates = [date.astype('datetime64[s]').item() for date in
                         ds.analog_dates.values[start_idx:end_idx]]
 
-    return {"dates": analog_dates}
+    return {
+        "parameters": {
+            "region": region,
+            "forecast_date": utils.convert_to_datetime(forecast_date),
+            "target_date": target_date,
+            "method": method,
+            "configuration": configuration,
+        },
+        "analog_dates": analog_dates
+    }
 
 
 def _get_analog_criteria(data_dir: str, region: str, forecast_date: str, method: str,
@@ -214,7 +241,16 @@ def _get_analog_criteria(data_dir: str, region: str, forecast_date: str, method:
         analog_criteria = ds.analog_criteria[start_idx:end_idx].astype(
             float).values.tolist()
 
-    return {"criteria": analog_criteria}
+    return {
+        "parameters": {
+            "region": region,
+            "forecast_date": utils.convert_to_datetime(forecast_date),
+            "target_date": target_date,
+            "method": method,
+            "configuration": configuration,
+        },
+        "criteria": analog_criteria
+    }
 
 
 def _get_analog_values(data_dir: str, region: str, forecast_date: str, method: str,
@@ -235,7 +271,17 @@ def _get_analog_values(data_dir: str, region: str, forecast_date: str, method: s
         values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
             float).values.tolist()
 
-    return {"values": values}
+    return {
+        "parameters": {
+            "region": region,
+            "forecast_date": utils.convert_to_datetime(forecast_date),
+            "target_date": target_date,
+            "method": method,
+            "configuration": configuration,
+            "entity_id": entity,
+        },
+        "values": values
+    }
 
 
 def _get_analog_values_percentiles(
@@ -264,7 +310,19 @@ def _get_analog_values_percentiles(
         values = [float(np.interp(percentile / 100, frequencies, values_sorted)) for
                   percentile in percentiles]
 
-    return {"percentiles": percentiles, "values": values}
+    return {
+        "parameters": {
+            "region": region,
+            "forecast_date": utils.convert_to_datetime(forecast_date),
+            "target_date": target_date,
+            "method": method,
+            "configuration": configuration,
+            "entity_id": entity,
+            "percentiles": percentiles,
+        },
+        "percentiles": percentiles,
+        "values": values
+    }
 
 
 def _get_analog_values_best(
@@ -288,7 +346,17 @@ def _get_analog_values_best(
         values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
             float).values
 
-    return {"values": values}
+    return {
+        "parameters": {
+            "region": region,
+            "forecast_date": utils.convert_to_datetime(forecast_date),
+            "target_date": target_date,
+            "method": method,
+            "configuration": configuration,
+            "entity_id": entity,
+        },
+        "values": values
+    }
 
 
 def _get_entities_analog_values_percentile(
@@ -318,7 +386,18 @@ def _get_entities_analog_values_percentile(
         values = [float(np.interp(percentile / 100, freq, values_sorted[i, :])) for i in
                   range(n_entities)]
 
-    return {"entity_ids": station_ids, "values": values}
+    return {
+        "parameters": {
+            "region": region,
+            "forecast_date": utils.convert_to_datetime(forecast_date),
+            "target_date": target_date,
+            "method": method,
+            "configuration": configuration,
+            "percentile": percentile,
+        },
+        "entity_ids": station_ids,
+        "values": values
+    }
 
 
 def _get_series_analog_values_best(
@@ -344,7 +423,16 @@ def _get_series_analog_values_best(
                 float).values.tolist()
             series_values.append(values)
 
-    return {"series_values": series_values}
+    return {
+        "parameters": {
+            "region": region,
+            "forecast_date": utils.convert_to_datetime(forecast_date),
+            "method": method,
+            "configuration": configuration,
+            "entity_id": entity
+        },
+        "series_values": series_values
+    }
 
 
 def _get_series_analog_values_percentiles(
@@ -386,9 +474,18 @@ def _get_series_analog_values_percentiles(
             {"percentile": pc,
              "series_values": series_values[i_pc, :].tolist()})
 
-    return {"forecast_date": utils.convert_to_datetime(forecast_date),
-            "target_dates": target_dates,
-            "series_percentiles": output}
+    return {
+        "parameters": {
+            "region": region,
+            "forecast_date": utils.convert_to_datetime(forecast_date),
+            "method": method,
+            "configuration": configuration,
+            "entity_id": entity,
+            "percentiles": percentiles
+        },
+        "target_dates": target_dates,
+        "series_percentiles": output
+    }
 
 
 def _get_series_analog_values_percentiles_history(
@@ -424,4 +521,14 @@ def _get_series_analog_values_percentiles_history(
         forecasts.append(series_percentiles)
         counter_found += 1
 
-    return {"past_forecasts": forecasts}
+    return {
+        "parameters": {
+            "region": region,
+            "forecast_date": utils.convert_to_datetime(forecast_date),
+            "method": method,
+            "configuration": configuration,
+            "entity_id": entity,
+            "percentiles": percentiles
+        },
+        "past_forecasts": forecasts
+    }

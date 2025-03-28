@@ -34,11 +34,12 @@ async def _handle_request(func, settings: config.Settings, region: str, **kwargs
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
-@router.get("/{region}/{forecast_date}/{method}/{lead_time}/analog-values-percentile/{percentile}",
+@router.get("/{region}/{forecast_date}/{method}/{lead_time}/entities-values-percentile/{percentile}",
             summary="Analog values for a given region, forecast_date, method, "
                     "lead time, and percentile, aggregated by selecting the "
                     "relevant configuration per entity",
-            response_model=EntitiesAnalogValuesPercentile)
+            response_model=EntitiesValuesPercentileResponse,
+            response_model_exclude_none=True)
 async def entities_analog_values_percentile(
         region: str,
         forecast_date: str,
@@ -58,7 +59,8 @@ async def entities_analog_values_percentile(
             summary="Largest values for a given region, forecast_date, method, "
                     "and percentile, aggregated by selecting the largest values for "
                     "the relevant configurations per entity",
-            response_model=List[SeriesSynthesisPerMethod])
+            response_model=SeriesSynthesisPerMethodListResponse,
+            response_model_exclude_none=True)
 async def series_synthesis_per_method(
         region: str,
         forecast_date: str,
@@ -75,7 +77,8 @@ async def series_synthesis_per_method(
 @router.get("/{region}/{forecast_date}/series-synthesis-total/{percentile}",
             summary="Largest values for a given region, forecast_date, "
                     "and percentile, aggregated by time steps",
-            response_model=List[SeriesSynthesisTotal])
+            response_model=SeriesSynthesisTotalListResponse,
+            response_model_exclude_none=True)
 async def series_synthesis_total(
         region: str,
         forecast_date: str,

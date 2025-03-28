@@ -36,7 +36,8 @@ async def _handle_request(func, settings: config.Settings, region: str, **kwargs
 
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{lead_time}/analog-dates",
             summary="Analog dates for a given forecast and target date",
-            response_model=AnalogDates)
+            response_model=AnalogDatesResponse,
+            response_model_exclude_none=True)
 async def analog_dates(
         region: str,
         forecast_date: str,
@@ -54,7 +55,8 @@ async def analog_dates(
 
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{lead_time}/analogy-criteria",
             summary="Analog criteria for a given forecast and target date",
-            response_model=AnalogCriteria)
+            response_model=AnalogCriteriaResponse,
+            response_model_exclude_none=True)
 async def analog_criteria(
         region: str,
         forecast_date: str,
@@ -72,7 +74,8 @@ async def analog_criteria(
 
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{lead_time}/entities-values-percentile/{percentile}",
             summary="Values for all entities for a given quantile, forecast and target date",
-            response_model=EntitiesAnalogValuesPercentile)
+            response_model=EntitiesValuesPercentileResponse,
+            response_model_exclude_none=True)
 async def entities_analog_values_percentile(
         region: str,
         forecast_date: str,
@@ -92,7 +95,8 @@ async def entities_analog_values_percentile(
 
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/reference-values",
             summary="Reference values (e.g. for different return periods) for a given entity",
-            response_model=ReferenceValues)
+            response_model=ReferenceValuesResponse,
+            response_model_exclude_none=True)
 async def reference_values(
         region: str,
         forecast_date: str,
@@ -109,8 +113,9 @@ async def reference_values(
 
 
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/series-values-best-analogs",
-    summary="Analog values of the best analogs for a given entity (time series)",
-    response_model=SeriesAnalogValues)
+            summary="Analog values of the best analogs for a given entity (time series)",
+            response_model=SeriesAnalogValuesResponse,
+            response_model_exclude_none=True)
 async def series_analog_values_best(
         region: str,
         forecast_date: str,
@@ -129,8 +134,9 @@ async def series_analog_values_best(
 
 
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/series-values-percentiles",
-    summary="Values for one entity for a given quantile, forecast and target date",
-    response_model=SeriesAnalogValuesPercentiles)
+            summary="Values for one entity for a given quantile, forecast and target date",
+            response_model=SeriesValuesPercentilesResponse,
+            response_model_exclude_none=True)
 async def series_analog_values_percentiles(
         region: str,
         forecast_date: str,
@@ -149,8 +155,9 @@ async def series_analog_values_percentiles(
 
 
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/series-values-percentiles-history",
-    summary="Values for one entity for a given quantile, forecast and target date",
-    response_model=SeriesAnalogValuesPercentilesHistory)
+            summary="Values for one entity for a given quantile, forecast and target date",
+            response_model=SeriesValuesPercentilesHistoryResponse,
+            response_model_exclude_none=True)
 async def series_analog_values_percentiles_history(
         region: str,
         forecast_date: str,
@@ -171,7 +178,8 @@ async def series_analog_values_percentiles_history(
 
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/{lead_time}/analogs",
             summary="Details of the analogs (rank, date, criteria, value) for a given forecast and entity",
-            response_model=Analogs)
+            response_model=AnalogsResponse,
+            response_model_exclude_none=True)
 async def analogs(
         region: str,
         forecast_date: str,
@@ -190,8 +198,9 @@ async def analogs(
 
 
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/{lead_time}/analog-values",
-    summary="Analog values for a given entity and target date",
-    response_model=AnalogValues)
+            summary="Analog values for a given entity and target date",
+            response_model=AnalogValuesResponse,
+            response_model_exclude_none=True)
 async def analog_values(
         region: str,
         forecast_date: str,
@@ -211,7 +220,8 @@ async def analog_values(
 
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/{lead_time}/analog-values-percentiles",
             summary="Values for one entity for a given quantile, forecast and target date",
-            response_model=AnalogValuesPercentiles)
+            response_model=AnalogValuesPercentilesResponse,
+            response_model_exclude_none=True)
 async def analog_values_percentiles(
         region: str,
         forecast_date: str,
@@ -232,7 +242,8 @@ async def analog_values_percentiles(
 
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/{lead_time}/analog-values-best",
             summary="Values for one entity for a given quantile, forecast and target date",
-            response_model=AnalogValues)
+            response_model=AnalogValuesResponse,
+            response_model_exclude_none=True)
 async def analog_values_best(
         region: str,
         forecast_date: str,

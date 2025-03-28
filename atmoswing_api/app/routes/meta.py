@@ -42,7 +42,8 @@ async def last_forecast_date(
 
 @router.get("/{region}/{forecast_date}/methods",
             summary="List of available methods",
-            response_model=List[Method])
+            response_model=MethodsListResponse,
+            response_model_exclude_none=True)
 async def list_methods(
         region: str,
         forecast_date: str,
@@ -56,7 +57,8 @@ async def list_methods(
 
 @router.get("/{region}/{forecast_date}/methods-and-configs",
             summary="List of available methods and configurations",
-            response_model=List[MethodConfig])
+            response_model=MethodConfigsListResponse,
+            response_model_exclude_none=True)
 async def list_methods_and_configs(
         region: str,
         forecast_date: str,
@@ -70,7 +72,8 @@ async def list_methods_and_configs(
 
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/entities",
             summary="List of available entities",
-            response_model=List[Entity])
+            response_model=EntitiesListResponse,
+            response_model_exclude_none=True)
 async def list_entities(
         region: str,
         forecast_date: str,

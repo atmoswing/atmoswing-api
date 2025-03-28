@@ -75,7 +75,9 @@ def _get_last_forecast_date(data_dir: str, region: str):
     _ = utils.convert_to_datetime(last_forecast_date)
 
     return {
-        "region": region,
+        "parameters" : {
+            "region": region
+        },
         "last_forecast_date": last_forecast_date
     }
 
@@ -85,7 +87,7 @@ def _get_methods_from_netcdf(data_dir: str, region: str, forecast_date: str):
 
     # Synchronous function to get methods from the NetCDF file
     if forecast_date == 'latest':
-        forecast_date = _get_last_forecast_date(region_path)
+        forecast_date = _get_last_forecast_date(data_dir, region)
 
     files = utils.list_files(region_path, forecast_date)
 
@@ -105,7 +107,13 @@ def _get_methods_from_netcdf(data_dir: str, region: str, forecast_date: str):
 
     methods.sort(key=lambda x: x['id'])
 
-    return methods
+    return {
+        "parameters": {
+            "region": region,
+            "forecast_date": utils.convert_to_datetime(forecast_date),
+        },
+        "methods": methods
+    }
 
 
 def _get_method_configs_from_netcdf(data_dir: str, region: str, forecast_date: str):
@@ -113,7 +121,7 @@ def _get_method_configs_from_netcdf(data_dir: str, region: str, forecast_date: s
 
     # Synchronous function to get method configurations from the NetCDF file
     if forecast_date == 'latest':
-        forecast_date = _get_last_forecast_date(region_path)
+        forecast_date = _get_last_forecast_date(data_dir, region)
 
     files = utils.list_files(region_path, forecast_date)
 
@@ -143,7 +151,13 @@ def _get_method_configs_from_netcdf(data_dir: str, region: str, forecast_date: s
     # Sort the method configurations by ID
     method_configs.sort(key=lambda x: x['id'])
 
-    return method_configs
+    return {
+        "parameters": {
+            "region": region,
+            "forecast_date": utils.convert_to_datetime(forecast_date)
+        },
+        "methods": method_configs
+    }
 
 
 def _get_entities_from_netcdf(data_dir: str, region: str, forecast_date: str, method: str,
@@ -152,7 +166,7 @@ def _get_entities_from_netcdf(data_dir: str, region: str, forecast_date: str, me
 
     # Synchronous function to get entities from the NetCDF file
     if forecast_date == 'latest':
-        forecast_date = _get_last_forecast_date(region_path)
+        forecast_date = _get_last_forecast_date(data_dir, region)
 
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
@@ -182,4 +196,12 @@ def _get_entities_from_netcdf(data_dir: str, region: str, forecast_date: str, me
 
             entities.append(entity)
 
-    return entities
+    return {
+        "parameters": {
+            "region": region,
+            "forecast_date": utils.convert_to_datetime(forecast_date),
+            "method": method,
+            "configuration": configuration
+        },
+        "entities": entities
+    }
