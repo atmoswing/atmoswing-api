@@ -1,0 +1,6 @@
+[run]
+source = atmoswing_api
+
+[report]
+omit =
+    tests/*
