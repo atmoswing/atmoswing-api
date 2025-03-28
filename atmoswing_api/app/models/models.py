@@ -1,6 +1,10 @@
-from pydantic import BaseModel, field_validator
-from typing import List, Optional
+from pydantic import BaseModel, AfterValidator
+from typing import List, Optional, Annotated
 from datetime import datetime
+
+
+def round_to(ndigits: int, /) -> AfterValidator:
+    return AfterValidator(lambda v: round(v, ndigits))
 
 
 class Parameters(BaseModel):
@@ -12,22 +16,6 @@ class Parameters(BaseModel):
     entity_id: Optional[int] = None
     percentile: Optional[int] = None
     percentiles: Optional[List[int]] = None
-
-
-class FloatValue(BaseModel):
-    value: float
-
-    @field_validator("value")
-    def round_value(cls, v: float) -> float:
-        return round(float(v), 2)
-
-
-class FloatValues(BaseModel):
-    values: List[float]
-
-    @field_validator("values")
-    def round_values(cls, v: List[float]) -> List[float]:
-        return [round(float(value), 2) for value in v]
 
 
 class Method(BaseModel):
@@ -76,29 +64,30 @@ class AnalogDatesResponse(BaseModel):
 
 class AnalogCriteriaResponse(BaseModel):
     parameters: Parameters
-    criteria: FloatValues
+    criteria: List[Annotated[float, round_to(2)]]
 
 
 class EntitiesValuesPercentileResponse(BaseModel):
     parameters: Parameters
     entity_ids: List[int]
-    values: FloatValues
+    values: List[Annotated[float, round_to(2)]]
 
 
 class ReferenceValuesResponse(BaseModel):
     parameters: Parameters
-    axis: FloatValues
-    values: FloatValues
+    reference_axis: List[Annotated[float, round_to(2)]]
+    reference_values: List[Annotated[float, round_to(2)]]
 
 
 class SeriesAnalogValuesResponse(BaseModel):
     parameters: Parameters
-    series_values: List[FloatValue]
+    target_dates: List[datetime]
+    series_values: List[List[Annotated[float, round_to(2)]]]
 
 
 class SeriesValuesPercentile(BaseModel):
     percentile: int
-    series_values: FloatValues
+    series_values: List[Annotated[float, round_to(2)]]
 
 
 class SeriesValuesPercentiles(BaseModel):
@@ -119,8 +108,8 @@ class SeriesValuesPercentilesHistoryResponse(BaseModel):
 
 class Analog(BaseModel):
     date: datetime
-    value: FloatValue
-    criteria: FloatValue
+    value: Annotated[float, round_to(2)]
+    criteria: Annotated[float, round_to(2)]
     rank: int
 
 
@@ -131,19 +120,19 @@ class AnalogsResponse(BaseModel):
 
 class AnalogValuesResponse(BaseModel):
     parameters: Parameters
-    values: FloatValues
+    values: List[Annotated[float, round_to(2)]]
 
 
 class AnalogValuesPercentilesResponse(BaseModel):
     parameters: Parameters
     percentiles: List[int]
-    values: FloatValues
+    values: List[Annotated[float, round_to(2)]]
 
 
 class SeriesSynthesisPerMethod(BaseModel):
     method_id: str
     target_dates: List[datetime]
-    values: FloatValues
+    values: List[Annotated[float, round_to(2)]]
 
 
 class SeriesSynthesisPerMethodListResponse(BaseModel):
@@ -154,7 +143,7 @@ class SeriesSynthesisPerMethodListResponse(BaseModel):
 class SeriesSynthesisTotal(BaseModel):
     time_step: int
     target_dates: List[datetime]
-    values: FloatValues
+    values: List[Annotated[float, round_to(2)]]
 
 
 class SeriesSynthesisTotalListResponse(BaseModel):

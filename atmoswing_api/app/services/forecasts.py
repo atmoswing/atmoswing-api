@@ -413,6 +413,8 @@ def _get_series_analog_values_best(
         raise FileNotFoundError(f"File not found: {file_path}")
 
     with xr.open_dataset(file_path) as ds:
+        target_dates = [np.datetime64(date).astype('datetime64[s]').item() for date in
+                        ds.target_dates.values]
         series_values = []
         entity_idx = utils.get_entity_index(ds, entity)
         analogs_nb = ds.analogs_nb.values
@@ -431,6 +433,7 @@ def _get_series_analog_values_best(
             "configuration": configuration,
             "entity_id": entity
         },
+        "target_dates": target_dates,
         "series_values": series_values
     }
 

@@ -27,7 +27,7 @@ async def test_get_analog_dates():
     result = await get_analog_dates(data_dir, region="adn", forecast_date="2024-10-05",
                                     method="4Zo-CEP", configuration="Alpes_Nord",
                                     lead_time="2024-10-07")
-    result = result["dates"]
+    result = result["analog_dates"]
 
     assert result == [datetime(1993, 10, 11),
                       datetime(1995, 11, 10),
@@ -165,9 +165,9 @@ async def test_get_reference_values():
         data_dir, region="adn", forecast_date="2024-10-05", method="4Zo-CEP",
         configuration="Alpes_Nord", entity=3)
 
-    assert result["axis"] == pytest.approx(
+    assert result["reference_axis"] == pytest.approx(
         [2.0, 2.33, 5.0, 10.0, 20.0, 50.0, 100.0, 200.0, 300.0, 500.0], rel=1e-2)
-    assert result["values"] == pytest.approx(
+    assert result["reference_values"] == pytest.approx(
         [66.60, 70.23, 85.97, 98.80, 111.10, 127.02, 138.95, 150.84, 157.78, 166.52],
         rel=1e-2)
 

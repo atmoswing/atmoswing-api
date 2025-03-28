@@ -61,10 +61,10 @@ def test_series_analog_values_best():
     assert "series_values" in data
 
 def test_series_analog_values_percentiles():
-    response = client.get("/forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/3/series-values-percentiles?percentiles=20&percentiles=60&percentiles=90")
+    response = client.get("/forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/3/series-values-percentiles")
     assert response.status_code == 200
     data = response.json()
-    assert "values" in data
+    assert "series_values" in data
 
 def test_series_analog_values_percentiles_history():
     response = client.get("/forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/3/series-values-percentiles-history?number=5")
@@ -97,7 +97,7 @@ def test_analog_values_best():
     assert "values" in data
 
 def test_entities_analog_values_percentile_aggregation():
-    response = client.get("/aggregations/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/1/48/entities-values-percentile/90")
+    response = client.get("/aggregations/adn/2024-10-05T00/4Zo-CEP/48/entities-values-percentile/90")
     assert response.status_code == 200
     data = response.json()
     assert "entity_ids" in data

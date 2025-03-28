@@ -31,7 +31,8 @@ async def test_get_last_forecast_date_from_files_mock(mock_check_region_path,
 async def test_get_last_forecast_date_from_files():
     result = await get_last_forecast_date(data_dir, "adn")
 
-    assert result == {'region': 'adn', 'last_forecast_date': '2024-10-06T18'}
+    assert result == {'last_forecast_date': '2024-10-06T18',
+                      'parameters': {'region': 'adn'}}
 
 
 @patch("os.listdir")
@@ -55,7 +56,8 @@ def test_get_last_forecast_date_mock(mock_convert_to_datetime, mock_check_region
     region_path = "/mocked_path/region"
     result = _get_last_forecast_date("/mocked_path", "region")
 
-    assert result == {'last_forecast_date': '2023-01-01T12', 'region': 'region'}
+    assert result == {'last_forecast_date': '2023-01-01T12',
+                      'parameters': {'region': 'region'}}
     mock_listdir.assert_any_call(f"{region_path}")
     mock_listdir.assert_any_call(f"{region_path}/2023")
     mock_listdir.assert_any_call(f"{region_path}/2023/01")
@@ -152,8 +154,8 @@ async def test_get_method_list_mock(mock_check_region_path, mock_get_methods):
 async def test_get_method_list():
     result = await get_method_list(data_dir, "adn", "2024-10-06")
 
-    assert result[0] == {'id': '2Z-06h-GFS', 'name': 'Analogie circulation (2Z) 6h GFS'}
-    assert result[5] == {'id': '4Zo-CEP', 'name': 'Analogie circulation (4Zo) CEP'}
+    assert result["methods"][0] == {'id': '2Z-06h-GFS', 'name': 'Analogie circulation (2Z) 6h GFS'}
+    assert result["methods"][5] == {'id': '4Zo-CEP', 'name': 'Analogie circulation (4Zo) CEP'}
 
 
 @patch("atmoswing_api.app.utils.utils.list_files")
@@ -182,7 +184,7 @@ def test_get_methods_from_netcdf_mock(mock_open_dataset, mock_check_region_path,
 
     result = _get_methods_from_netcdf("/mocked_path", "region", "2023-01-01")
 
-    assert result == [{"id": 1, "name": "Method A"}, {"id": 2, "name": "Method B"}]
+    assert result["methods"] == [{"id": 1, "name": "Method A"}, {"id": 2, "name": "Method B"}]
     mock_list_files.assert_called_once_with("/mocked_path/region", "2023-01-01")
     assert mock_open_dataset.call_count == 2
 
@@ -255,7 +257,7 @@ async def test_get_method_configs_list_mock(
             "configurations": [{"id": "Alpes_Nord", "name": "Alpes du Nord"}],
         },
     ]
-    assert result == expected_result
+    assert result["methods"] == expected_result
 
     # Ensure the mocked methods were called with expected arguments
     mock_check_region_path.assert_called_once_with("/mocked_path", "region1")
@@ -268,12 +270,12 @@ async def test_get_method_configs_list_mock(
 async def test_get_method_configs_list():
     result = await get_method_configs_list(data_dir, "adn", "2024-10-06")
 
-    assert result[0] == {
+    assert result["methods"][0] == {
         'configurations': [
             {'id': 'Alpes_Nord', 'name': 'Alpes du Nord'}
         ],
         'id': '2Z-06h-GFS', 'name': 'Analogie circulation (2Z) 6h GFS'}
-    assert result[6] == {
+    assert result["methods"][6] == {
         'configurations': [
             {'id': 'Alpes_Nord', 'name': 'Alpes du Nord'},
             {'id': 'Alpes_Sud', 'name': 'Alpes du Sud'}
@@ -343,7 +345,7 @@ async def test_get_entities_list_mock(
     ]
 
     # Assertions
-    assert result == expected_result
+    assert result["entities"] == expected_result
     mock_check_region_path.assert_called_once_with(data_dir, region)
     mock_get_file_path.assert_called_once_with(region_path, date, method, configuration)
     mock_exists.assert_called_once_with(file_path)
@@ -362,14 +364,14 @@ async def test_get_entities_list():
     result = await get_entities_list(data_dir, region, date, method, configuration)
 
     # Assertions
-    assert result[0] == {
+    assert result["entities"][0] == {
         "id": 1,
         "name": "Arly",
         "x": 973795,
         "y": 6524123
     }
 
-    assert result[5] == {
+    assert result["entities"][5] == {
         "id": 6,
         "name": "Haute Maurienne",
         "x": 1006560,
