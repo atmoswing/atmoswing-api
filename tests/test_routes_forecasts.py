@@ -1,32 +1,20 @@
-import pytest
+import os
+from functools import lru_cache
 from fastapi.testclient import TestClient
-from atmoswing_api.app.main import app  # Import your FastAPI app
+from atmoswing_api import config
+from atmoswing_api.app.main import app
+from atmoswing_api.app.routes.forecasts import get_settings as original_get_settings
 
+
+@lru_cache
+def get_settings():
+    cwd = os.path.dirname(os.path.abspath(__file__))
+    data_dir = os.path.join(cwd, "data")
+    return config.Settings(data_dir=data_dir)
+
+app.dependency_overrides[original_get_settings] = get_settings
 client = TestClient(app)
 
-def test_last_forecast_date():
-    response = client.get("/meta/adn/last-forecast-date")
-    assert response.status_code == 200
-    data = response.json()
-    assert "last_forecast_date" in data
-
-def test_list_methods():
-    response = client.get("/meta/adn/2024-10-05T00/methods")
-    assert response.status_code == 200
-    data = response.json()
-    assert "methods" in data
-
-def test_list_methods_and_configs():
-    response = client.get("/meta/adn/2024-10-05T00/methods-and-configs")
-    assert response.status_code == 200
-    data = response.json()
-    assert "methods" in data
-
-def test_list_entities():
-    response = client.get("/meta/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/entities")
-    assert response.status_code == 200
-    data = response.json()
-    assert "entities" in data
 
 def test_analog_dates():
     response = client.get("/forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/2024-10-07/analog-dates")
@@ -94,22 +82,3 @@ def test_analog_values_best():
     assert response.status_code == 200
     data = response.json()
     assert "values" in data
-
-def test_entities_analog_values_percentile_aggregation():
-    response = client.get("/aggregations/adn/2024-10-05T00/4Zo-CEP/48/entities-values-percentile/90")
-    assert response.status_code == 200
-    data = response.json()
-    assert "entity_ids" in data
-    assert "values" in data
-
-def test_series_synthesis_per_method():
-    response = client.get("/aggregations/adn/2024-10-05T00/series-synthesis-per-method/90")
-    assert response.status_code == 200
-    data = response.json()
-    assert "series_percentiles" in data
-
-def test_series_synthesis_total():
-    response = client.get("/aggregations/adn/2024-10-05T00/series-synthesis-total/90")
-    assert response.status_code == 200
-    data = response.json()
-    assert "series_percentiles" in data
