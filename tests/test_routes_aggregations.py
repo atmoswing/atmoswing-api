@@ -22,6 +22,7 @@ def test_entities_analog_values_percentile_aggregation():
     data = response.json()
     assert "entity_ids" in data
     assert "values" in data
+    assert "values_normalized" in data
 
 def test_series_synthesis_per_method():
     response = client.get("/aggregations/adn/2024-10-05T00/series-synthesis-per-method/90")

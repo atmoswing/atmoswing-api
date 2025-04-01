@@ -1,6 +1,6 @@
 import logging
 from functools import lru_cache
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 
 from atmoswing_api import config
 from atmoswing_api.app.models.models import *
@@ -36,7 +36,7 @@ async def _handle_request(func, settings: config.Settings, region: str, **kwargs
             summary="Analog values for a given region, forecast_date, method, "
                     "lead time, and percentile, aggregated by selecting the "
                     "relevant configuration per entity",
-            response_model=EntitiesValuesPercentileResponse,
+            response_model=EntitiesValuesPercentileAggregationResponse,
             response_model_exclude_none=True)
 async def entities_analog_values_percentile(
         region: str,
@@ -44,13 +44,15 @@ async def entities_analog_values_percentile(
         method: str,
         lead_time: int|str,
         percentile: int,
-        settings: Annotated[config.Settings, Depends(get_settings)]):
+        settings: Annotated[config.Settings, Depends(get_settings)],
+        normalize: int = Query(10)):
     """
     Get the analog dates for a given region, forecast_date, method, configuration, and lead_time.
     """
     return await _handle_request(get_entities_analog_values_percentile, settings,
                                  region, forecast_date=forecast_date, method=method,
-                                 lead_time=lead_time, percentile=percentile)
+                                 lead_time=lead_time, percentile=percentile,
+                                 normalize=normalize)
 
 
 @router.get("/{region}/{forecast_date}/series-synthesis-per-method/{percentile}",
@@ -63,13 +65,14 @@ async def series_synthesis_per_method(
         region: str,
         forecast_date: str,
         percentile: int,
-        settings: Annotated[config.Settings, Depends(get_settings)]):
+        settings: Annotated[config.Settings, Depends(get_settings)],
+        normalize: int = Query(10)):
     """
     Get the largest analog values for a given region, forecast_date, and percentile.
     """
     return await _handle_request(get_series_synthesis_per_method, settings,
                                  region, forecast_date=forecast_date,
-                                 percentile=percentile)
+                                 percentile=percentile, normalize=normalize)
 
 
 @router.get("/{region}/{forecast_date}/series-synthesis-total/{percentile}",
@@ -81,10 +84,11 @@ async def series_synthesis_total(
         region: str,
         forecast_date: str,
         percentile: int,
-        settings: Annotated[config.Settings, Depends(get_settings)]):
+        settings: Annotated[config.Settings, Depends(get_settings)],
+        normalize: int = Query(10)):
     """
     Get the largest analog values for a given region, forecast_date, and percentile.
     """
     return await _handle_request(get_series_synthesis_total, settings,
                                  region, forecast_date=forecast_date,
-                                 percentile=percentile)
+                                 percentile=percentile, normalize=normalize)

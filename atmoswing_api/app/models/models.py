@@ -73,6 +73,13 @@ class EntitiesValuesPercentileResponse(BaseModel):
     values: List[Annotated[float, round_to(2)]]
 
 
+class EntitiesValuesPercentileAggregationResponse(BaseModel):
+    parameters: Parameters
+    entity_ids: List[int]
+    values: List[Annotated[float, round_to(2)]]
+    values_normalized: List[Annotated[float, round_to(2)]]
+
+
 class ReferenceValuesResponse(BaseModel):
     parameters: Parameters
     reference_axis: List[Annotated[float, round_to(2)]]
@@ -133,6 +140,7 @@ class SeriesSynthesisPerMethod(BaseModel):
     method_id: str
     target_dates: List[datetime]
     values: List[Annotated[float, round_to(2)]]
+    values_normalized: List[Annotated[float, round_to(2)]]
 
 
 class SeriesSynthesisPerMethodListResponse(BaseModel):
@@ -144,6 +152,7 @@ class SeriesSynthesisTotal(BaseModel):
     time_step: int
     target_dates: List[datetime]
     values: List[Annotated[float, round_to(2)]]
+    values_normalized: List[Annotated[float, round_to(2)]]
 
 
 class SeriesSynthesisTotalListResponse(BaseModel):
