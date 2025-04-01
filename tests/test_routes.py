@@ -1,6 +1,5 @@
 import pytest
 from fastapi.testclient import TestClient
-from datetime import datetime
 from atmoswing_api.app.main import app  # Import your FastAPI app
 
 client = TestClient(app)
