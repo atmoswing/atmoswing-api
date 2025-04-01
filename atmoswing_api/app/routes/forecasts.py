@@ -155,7 +155,7 @@ async def series_analog_values_percentiles(
 
 
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/series-values-percentiles-history",
-            summary="Values for one entity for a given quantile, forecast and target date",
+            summary="Values from the past forecasts for one entity, a given quantile and target date",
             response_model=SeriesValuesPercentilesHistoryResponse,
             response_model_exclude_none=True)
 async def series_analog_values_percentiles_history(
