@@ -1,3 +1,4 @@
+import os
 from functools import lru_cache
 from fastapi.testclient import TestClient
 from atmoswing_api import config
@@ -5,7 +6,9 @@ from atmoswing_api.app.main import app
 
 @lru_cache
 def get_settings():
-    return config.Settings(data_dir="./tests/data")
+    cwd = os.path.dirname(os.path.abspath(__file__))
+    data_dir = os.path.join(cwd, "data")
+    return config.Settings(data_dir=data_dir)
 
 client = TestClient(app)
 
