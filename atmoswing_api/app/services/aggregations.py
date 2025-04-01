@@ -5,7 +5,7 @@ import xarray as xr
 import numpy as np
 import asyncio
 
-from ..utils import utils
+from atmoswing_api.app.utils import utils
 
 
 async def get_entities_analog_values_percentile(

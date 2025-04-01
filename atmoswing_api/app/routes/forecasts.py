@@ -4,9 +4,9 @@ from functools import lru_cache
 from fastapi import APIRouter, HTTPException, Depends, Query
 from typing_extensions import Annotated
 
-import config
-from app.models.models import *
-from app.services.forecasts import *
+from atmoswing_api import config
+from atmoswing_api.app.models.models import *
+from atmoswing_api.app.services.forecasts import *
 
 router = APIRouter()
 debug = False

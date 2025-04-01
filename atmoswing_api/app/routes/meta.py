@@ -4,10 +4,10 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing_extensions import Annotated
 from typing import List
 
-import config
-from app.services.meta import get_last_forecast_date, \
+from atmoswing_api import config
+from atmoswing_api.app.services.meta import get_last_forecast_date, \
     get_method_list, get_method_configs_list, get_entities_list
-from app.models.models import *
+from atmoswing_api.app.models.models import *
 
 router = APIRouter()
 

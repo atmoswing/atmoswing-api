@@ -2,7 +2,7 @@ import xarray as xr
 import asyncio
 import os
 
-from ..utils import utils
+from atmoswing_api.app.utils import utils
 
 
 async def get_last_forecast_date(data_dir: str, region: str):
