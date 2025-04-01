@@ -142,8 +142,7 @@ async def test_get_series_analog_values_percentiles():
     result = await get_series_analog_values_percentiles(
         data_dir, region="adn", forecast_date="2024-10-05", method="4Zo-CEP",
         configuration="Alpes_Nord", entity=3, percentiles=[20, 60, 90])
-
-    result = result["series_percentiles"]
+    result = result["series_values"]["series_percentiles"]
 
     assert result[0]["percentile"] == 20
     assert result[0]["series_values"] == pytest.approx(

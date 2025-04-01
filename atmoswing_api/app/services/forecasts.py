@@ -486,8 +486,11 @@ def _get_series_analog_values_percentiles(
             "entity_id": entity,
             "percentiles": percentiles
         },
-        "target_dates": target_dates,
-        "series_percentiles": output
+        "series_values": {
+            "forecast_date": utils.convert_to_datetime(forecast_date),
+            "target_dates": target_dates,
+            "series_percentiles": output
+        }
     }
 
 
@@ -520,6 +523,7 @@ def _get_series_analog_values_percentiles_history(
         dt_str = f"{dt.year:04d}-{dt.month:02d}-{dt.day:02d}T{dt.hour:02d}"
         series_percentiles = _get_series_analog_values_percentiles(
             data_dir, region, dt_str, method, configuration, entity, percentiles)
+        series_percentiles = series_percentiles["series_values"]
 
         forecasts.append(series_percentiles)
         counter_found += 1

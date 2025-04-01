@@ -175,6 +175,7 @@ def _get_series_synthesis_total(data_dir: str, region: str, forecast_date: str,
     region_path = utils.check_region_path(data_dir, region)
     largest_values_per_method = _get_series_synthesis_per_method(
         data_dir, region, forecast_date, percentile)
+    largest_values_per_method = largest_values_per_method["series_percentiles"]
 
     # Aggregate the values across methods but separate different time steps
     output = []

@@ -25,6 +25,7 @@ async def test_get_series_synthesis_per_method():
     # /aggregations/adn/2024-10-05T00/series-synthesis-per-method/90
     result = await get_series_synthesis_per_method(
         data_dir, region="adn", forecast_date="2024-10-05", percentile=90)
+    result = result["series_percentiles"]
 
     assert len(result) == 6
 
@@ -61,6 +62,7 @@ async def test_get_series_synthesis_total():
     # /aggregations/adn/2024-10-05T00/series-synthesis-total/90
     result = await get_series_synthesis_total(
         data_dir, region="adn", forecast_date="2024-10-05", percentile=90)
+    result = result["series_percentiles"]
 
     assert len(result) == 2
     assert result[0]["time_step"] == 6
