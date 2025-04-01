@@ -3,6 +3,8 @@ from functools import lru_cache
 from fastapi.testclient import TestClient
 from atmoswing_api import config
 from atmoswing_api.app.main import app
+from atmoswing_api.app.routes.meta import get_settings as original_get_settings
+
 
 @lru_cache
 def get_settings():
@@ -10,6 +12,7 @@ def get_settings():
     data_dir = os.path.join(cwd, "data")
     return config.Settings(data_dir=data_dir)
 
+app.dependency_overrides[original_get_settings] = get_settings
 client = TestClient(app)
 
 def test_last_forecast_date():
