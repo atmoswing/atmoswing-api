@@ -1,7 +1,7 @@
 [project]
 name = "atmoswing-api"
 version = "0.9.1"
-description = "A web forecast API for Atmoswing"
+description = "A web API for AtmoSwing forecasts"
 requires-python = ">=3.10"
 authors = [
     { name = "Pascal Horton", email = "pascal.horton@terranum.ch" }
