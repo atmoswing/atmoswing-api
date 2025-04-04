@@ -10,37 +10,39 @@ from atmoswing_api.app.utils import utils
 
 async def get_entities_analog_values_percentile(
         data_dir: str, region: str, forecast_date: str, method: str, lead_time: int|str,
-        percentile: int):
+        percentile: int, normalize: int = 10):
     """
     Get the precipitation values for a given region, date, method, configuration,
     target date, and percentile.
     """
     return await asyncio.to_thread(_get_entities_analog_values_percentile,
                                    data_dir, region, forecast_date, method,
-                                   lead_time, percentile)
+                                   lead_time, percentile, normalize)
 
 
-async def get_series_synthesis_per_method(data_dir: str, region: str,
-                                          forecast_date: str, percentile: int):
+async def get_series_synthesis_per_method(
+        data_dir: str, region: str, forecast_date: str, percentile: int,
+        normalize: int = 10):
     """
     Get the largest values per method for a given region, date, and percentile.
     """
     return await asyncio.to_thread(_get_series_synthesis_per_method, data_dir, region,
-                                   forecast_date, percentile)
+                                   forecast_date, percentile, normalize)
 
 
-async def get_series_synthesis_total(data_dir: str, region: str,
-                                     forecast_date: str, percentile: int):
+async def get_series_synthesis_total(
+        data_dir: str, region: str, forecast_date: str, percentile: int,
+        normalize: int = 10):
     """
     Get the largest values for a given region, date, and percentile.
     """
     return await asyncio.to_thread(_get_series_synthesis_total, data_dir, region,
-                                   forecast_date, percentile)
+                                   forecast_date, percentile, normalize)
 
 
 def _get_entities_analog_values_percentile(
         data_dir: str, region: str, forecast_date: str, method: str, lead_time: int|str,
-        percentile: int):
+        percentile: int, normalize: int = 10):
     """
     Synchronous function to get the precipitation values for a specific percentile
     from the netCDF file.
@@ -56,6 +58,7 @@ def _get_entities_analog_values_percentile(
 
     all_station_ids = None
     values = None
+    values_normalized = None
 
     for file_path in files:
 
@@ -71,6 +74,7 @@ def _get_entities_analog_values_percentile(
             start_idx, end_idx = utils.get_row_indices(ds, target_date)
             if values is None:
                 values = np.ones((len(all_station_ids),)) * np.nan
+                values_normalized = np.ones((len(all_station_ids),)) * np.nan
             analog_values = ds.analog_values_raw[station_indices, start_idx:end_idx].astype(float).values
             values_sorted = np.sort(analog_values, axis=1)
 
@@ -83,6 +87,10 @@ def _get_entities_analog_values_percentile(
             values[station_indices] = [float(np.interp(percentile / 100, freq, values_sorted[i, :])) for i in
                       range(n_entities)]
 
+            # Normalize the values
+            ref_values = _get_reference_values(ds, normalize, station_indices)
+            values_normalized[station_indices] = values[station_indices] / ref_values
+
     return {
         "parameters": {
             "region": region,
@@ -92,12 +100,13 @@ def _get_entities_analog_values_percentile(
             "percentile": percentile,
         },
         "entity_ids": all_station_ids,
-        "values": values.tolist()
+        "values": values.tolist(),
+        "values_normalized": values_normalized.tolist()
     }
 
 
 def _get_series_synthesis_per_method(data_dir: str, region: str, forecast_date: str,
-                                     percentile: int):
+                                     percentile: int, normalize: int = 10):
     """
     Synchronous function to get the largest analog values for a given region, date,
     and percentile.
@@ -125,7 +134,8 @@ def _get_series_synthesis_per_method(data_dir: str, region: str, forecast_date: 
                     "method_id": method_id,
                     "target_dates": [np.datetime64(date).astype('datetime64[s]').item()
                                      for date in ds.target_dates.values],
-                    "values": np.zeros((len(analogs_nb),)).astype(float).tolist()
+                    "values": np.zeros((len(analogs_nb),)).astype(float).tolist(),
+                    "values_normalized": np.zeros((len(analogs_nb),)).astype(float).tolist()
                 })
             method_idx = method_ids.index(method_id)
 
@@ -150,11 +160,19 @@ def _get_series_synthesis_per_method(data_dir: str, region: str, forecast_date: 
                     float(np.interp(percentile / 100, freq, values_sorted[i, :])) for i
                     in range(n_entities)]
 
+                # Normalize the values
+                ref_values = _get_reference_values(ds, normalize, station_indices)
+                values_normalized = np.array(values_percentile) / ref_values
+
                 # Store the largest values
-                max_percentile = np.max(values_percentile)
                 largest_values[method_idx]["values"][lead_time_idx] = float(max(
                     largest_values[method_idx]["values"][lead_time_idx],
-                    max_percentile))
+                    np.max(values_percentile)))
+
+                # Store the normalized values
+                largest_values[method_idx]["values_normalized"][lead_time_idx] = float(max(
+                    largest_values[method_idx]["values_normalized"][lead_time_idx],
+                    np.max(values_normalized)))
 
     return {
         "parameters": {
@@ -167,14 +185,14 @@ def _get_series_synthesis_per_method(data_dir: str, region: str, forecast_date: 
 
 
 def _get_series_synthesis_total(data_dir: str, region: str, forecast_date: str,
-                                percentile: int):
+                                percentile: int, normalize: int = 10):
     """
     Synchronous function to get the largest analog values for a given region, date,
     and percentile.
     """
     region_path = utils.check_region_path(data_dir, region)
     largest_values_per_method = _get_series_synthesis_per_method(
-        data_dir, region, forecast_date, percentile)
+        data_dir, region, forecast_date, percentile, normalize)
     largest_values_per_method = largest_values_per_method["series_percentiles"]
 
     # Aggregate the values across methods but separate different time steps
@@ -191,7 +209,8 @@ def _get_series_synthesis_total(data_dir: str, region: str, forecast_date: str,
             output.append({
                 "time_step": time_step,
                 "target_dates": method["target_dates"],
-                "values": method["values"]
+                "values": method["values"],
+                "values_normalized": method["values_normalized"]
             })
             continue
 
@@ -211,11 +230,15 @@ def _get_series_synthesis_total(data_dir: str, region: str, forecast_date: str,
             output[lead_time_idx]["target_dates"] = method["target_dates"]
             # Add 0 to the values exceeding the original length
             output[lead_time_idx]["values"] += [0] * (len_lt_new - len_lt_original)
+            output[lead_time_idx]["values_normalized"] += [0] * (len_lt_new - len_lt_original)
 
         for i in range(len_lt_new):
             output[lead_time_idx]["values"][i] = max(
                 output[lead_time_idx]["values"][i],
                 method["values"][i])
+            output[lead_time_idx]["values_normalized"][i] = max(
+                output[lead_time_idx]["values_normalized"][i],
+                method["values_normalized"][i])
 
     return {
         "parameters": {
@@ -233,3 +256,16 @@ def _get_relevant_stations_idx(ds):
     all_station_ids = ds.station_ids.values.tolist()
     station_idx = [all_station_ids.index(x) for x in relevant_station_ids]
     return station_idx
+
+
+def _get_reference_values(ds, normalize, station_indices):
+    axis = ds.reference_axis.values.tolist()
+    try:
+        ref_idx = axis.index(normalize)
+    except ValueError:
+        raise ValueError(f"normalize must be in {axis}")
+
+    ref_values = ds.reference_values[station_indices, ref_idx].astype(
+        float).values
+
+    return ref_values
