@@ -1,14 +1,17 @@
-from fastapi import APIRouter, Request
-from fastapi.responses import FileResponse
-from jinja2 import Environment, FileSystemLoader
-from weasyprint import HTML
 import os
-from typing import Any
+from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from jinja2 import Environment, FileSystemLoader
 
 router = APIRouter()
 
+limiter = Limiter(key_func=get_remote_address)
 
-@router.get("/docs/export", summary="Generate API documentation PDF")
+
+@router.get("/minidocs", summary="Generate API documentation HTML")
+@limiter.limit("10/minute")
 async def export_api_docs(request: Request):
     app = request.app
     routes_info = []
@@ -19,7 +22,8 @@ async def export_api_docs(request: Request):
                 "path": route.path,
                 "methods": list(route.methods),
                 "name": route.name,
-                "summary": getattr(route.endpoint, "__doc__", "").strip()
+                "summary": (getattr(route.endpoint, "__doc__", "") or "").strip() if route.endpoint else "",
+                "parameters": list(route.param_convertors.keys())
             }
             routes_info.append(route_info)
 
@@ -29,12 +33,10 @@ async def export_api_docs(request: Request):
     }
 
     # Render HTML
-    env = Environment(loader=FileSystemLoader("templates"))
+    template_dir = os.path.join(os.path.dirname(__file__), "../../templates")
+    env = Environment(loader=FileSystemLoader(template_dir))
     template = env.get_template("api_doc.html")
     html_out = template.render(context)
 
-    # Convert to PDF
-    pdf_path = "/tmp/api_doc.pdf"
-    HTML(string=html_out).write_pdf(pdf_path)
-
-    return FileResponse(pdf_path, media_type="application/pdf", filename="api_doc.pdf")
+    # Return the rendered HTML response directly
+    return HTMLResponse(content=html_out)

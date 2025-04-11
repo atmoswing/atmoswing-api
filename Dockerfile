@@ -9,10 +9,6 @@ ENV PYTHONUNBUFFERED=1 \
 # Set the working directory
 WORKDIR /app
 
-# Install weasyprint
-RUN apt-get update && \
-    apt-get install -y weasyprint
-
 # Copy and install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
