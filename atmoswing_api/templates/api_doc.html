@@ -21,6 +21,9 @@
         {% if route.summary %}
         <p><strong>Description:</strong> {{ route.summary }}</p>
         {% endif %}
+        {% if route.parameters %}
+        <p><strong>Parameters:</strong> {{ route.parameters | join(', ') }}</p>
+        {% endif %}
     </div>
     {% endfor %}
 </body>

@@ -9,5 +9,5 @@ dask
 pytest
 pytest-asyncio
 httpx
-weasyprint
+slowapi
 jinja2

@@ -5,12 +5,6 @@
 [![PyPI](https://img.shields.io/pypi/v/atmoswing-api?color=blue)](https://pypi.org/project/atmoswing-api/)
 ![Static Badge](https://img.shields.io/badge/python-%3E%3D3.10-blue)
 
-## Development
-
-Run the local server from the IDE with: 
-
-    uvicorn app.main:app --reload
-
 ## Setup
 
 Specify the environment variables in a `.env` file:
@@ -20,3 +14,17 @@ Specify the environment variables in a `.env` file:
 # Directory where the forecasts are stored
 data_dir=/opt/atmoswing/data
 ```
+
+## Development
+
+Run the local server from the IDE with: 
+
+    uvicorn app.main:app --reload
+
+## Documentation
+
+The API documentation is available at:
+- [http://localhost:8000/docs](http://localhost:8000/docs) for the Swagger UI
+- [http://localhost:8000/redoc](http://localhost:8000/redoc) for the ReDoc UI
+- [http://localhost:8000/minidocs](http://localhost:8000/minidocs) customized minimal documentation
+- [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json) for the OpenAPI JSON schema
