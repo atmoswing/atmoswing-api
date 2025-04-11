@@ -12,3 +12,12 @@ Run the local server from the IDE with:
 
     uvicorn app.main:app --reload
 
+## Setup
+
+Specify the environment variables in a `.env` file:
+
+```dotenv
+# .env
+# Directory where the forecasts are stored
+data_dir=/opt/atmoswing/data
+```
