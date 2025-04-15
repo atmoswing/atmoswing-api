@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from typing_extensions import Annotated
 
 from atmoswing_api import config
+from atmoswing_api.cache import *
 from atmoswing_api.app.models.models import *
 from atmoswing_api.app.services.forecasts import *
 
@@ -43,6 +44,7 @@ async def _handle_request(func, settings: config.Settings, region: str, **kwargs
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
+@redis_cache(ttl=3600)
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{lead_time}/analog-dates",
             summary="Analog dates for a given forecast and target date",
             response_model=AnalogDatesResponse,
@@ -62,6 +64,7 @@ async def analog_dates(
                                  configuration=configuration, lead_time=lead_time)
 
 
+@redis_cache(ttl=3600)
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{lead_time}/analogy-criteria",
             summary="Analog criteria for a given forecast and target date",
             response_model=AnalogCriteriaResponse,
@@ -81,6 +84,7 @@ async def analog_criteria(
                                  configuration=configuration, lead_time=lead_time)
 
 
+@redis_cache(ttl=3600)
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{lead_time}/entities-values-percentile/{percentile}",
             summary="Values for all entities for a given quantile, forecast and target date",
             response_model=EntitiesValuesPercentileResponse,
@@ -102,6 +106,7 @@ async def entities_analog_values_percentile(
                                  percentile=percentile)
 
 
+@redis_cache(ttl=3600)
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/reference-values",
             summary="Reference values (e.g. for different return periods) for a given entity",
             response_model=ReferenceValuesResponse,
@@ -121,6 +126,7 @@ async def reference_values(
                                  configuration=configuration, entity=entity)
 
 
+@redis_cache(ttl=3600)
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/series-values-best-analogs",
             summary="Analog values of the best analogs for a given entity (time series)",
             response_model=SeriesAnalogValuesResponse,
@@ -142,6 +148,7 @@ async def series_analog_values_best(
                                  number=number)
 
 
+@redis_cache(ttl=3600)
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/series-values-percentiles",
             summary="Values for one entity for a given quantile, forecast and target date",
             response_model=SeriesValuesPercentilesResponse,
@@ -163,6 +170,7 @@ async def series_analog_values_percentiles(
                                  percentiles=percentiles)
 
 
+@redis_cache(ttl=3600)
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/series-values-percentiles-history",
             summary="Values from the past forecasts for one entity, a given quantile and target date",
             response_model=SeriesValuesPercentilesHistoryResponse,
@@ -185,6 +193,7 @@ async def series_analog_values_percentiles_history(
                                  percentiles=percentiles, number=number)
 
 
+@redis_cache(ttl=3600)
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/{lead_time}/analogs",
             summary="Details of the analogs (rank, date, criteria, value) for a given forecast and entity",
             response_model=AnalogsResponse,
@@ -206,6 +215,7 @@ async def analogs(
                                  lead_time=lead_time)
 
 
+@redis_cache(ttl=3600)
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/{lead_time}/analog-values",
             summary="Analog values for a given entity and target date",
             response_model=AnalogValuesResponse,
@@ -227,6 +237,7 @@ async def analog_values(
                                  lead_time=lead_time)
 
 
+@redis_cache(ttl=3600)
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/{lead_time}/analog-values-percentiles",
             summary="Values for one entity for a given quantile, forecast and target date",
             response_model=AnalogValuesPercentilesResponse,
@@ -249,6 +260,7 @@ async def analog_values_percentiles(
                                  lead_time=lead_time, percentiles=percentiles)
 
 
+@redis_cache(ttl=3600)
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{entity}/{lead_time}/analog-values-best",
             summary="Values for one entity for a given quantile, forecast and target date",
             response_model=AnalogValuesResponse,

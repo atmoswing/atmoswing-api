@@ -5,6 +5,7 @@ from typing_extensions import Annotated
 from typing import List
 
 from atmoswing_api import config
+from atmoswing_api.cache import *
 from atmoswing_api.app.services.meta import get_last_forecast_date, \
     get_method_list, get_method_configs_list, get_entities_list, get_config_data
 from atmoswing_api.app.models.models import *
@@ -48,6 +49,7 @@ async def show_config(
     return await get_config_data(settings.data_dir)
 
 
+@redis_cache(ttl=120)
 @router.get("/{region}/last-forecast-date",
             summary="Last available forecast date")
 async def last_forecast_date(
@@ -59,6 +61,7 @@ async def last_forecast_date(
     return await _handle_request(get_last_forecast_date, settings, region)
 
 
+@redis_cache(ttl=3600)
 @router.get("/{region}/{forecast_date}/methods",
             summary="List of available methods",
             response_model=MethodsListResponse,
@@ -74,6 +77,7 @@ async def list_methods(
                                  forecast_date=forecast_date)
 
 
+@redis_cache(ttl=3600)
 @router.get("/{region}/{forecast_date}/methods-and-configs",
             summary="List of available methods and configurations",
             response_model=MethodConfigsListResponse,
@@ -89,6 +93,7 @@ async def list_methods_and_configs(
                                  forecast_date=forecast_date)
 
 
+@redis_cache(ttl=3600)
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/entities",
             summary="List of available entities",
             response_model=EntitiesListResponse,

@@ -11,3 +11,4 @@ pytest-asyncio
 httpx
 slowapi
 jinja2
+redis
