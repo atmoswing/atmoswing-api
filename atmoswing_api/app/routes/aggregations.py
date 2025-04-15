@@ -3,6 +3,7 @@ from functools import lru_cache
 from fastapi import APIRouter, HTTPException, Depends, Query
 
 from atmoswing_api import config
+from atmoswing_api.cache import *
 from atmoswing_api.app.models.models import *
 from atmoswing_api.app.services.aggregations import *
 
@@ -41,6 +42,7 @@ async def _handle_request(func, settings: config.Settings, region: str, **kwargs
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
+@redis_cache(ttl=3600)
 @router.get("/{region}/{forecast_date}/{method}/{lead_time}/entities-values-percentile/{percentile}",
             summary="Analog values for a given region, forecast_date, method, "
                     "lead time, and percentile, aggregated by selecting the "
@@ -64,6 +66,7 @@ async def entities_analog_values_percentile(
                                  normalize=normalize)
 
 
+@redis_cache(ttl=3600)
 @router.get("/{region}/{forecast_date}/series-synthesis-per-method/{percentile}",
             summary="Largest values for a given region, forecast_date, method, "
                     "and percentile, aggregated by selecting the largest values for "
@@ -84,6 +87,7 @@ async def series_synthesis_per_method(
                                  percentile=percentile, normalize=normalize)
 
 
+@redis_cache(ttl=3600)
 @router.get("/{region}/{forecast_date}/series-synthesis-total/{percentile}",
             summary="Largest values for a given region, forecast_date, "
                     "and percentile, aggregated by time steps",
