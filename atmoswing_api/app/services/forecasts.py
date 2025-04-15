@@ -133,6 +133,9 @@ def _get_reference_values(data_dir: str, region: str, forecast_date: str, method
     """
     Synchronous function to get the reference values from the netCDF file.
     """
+    if forecast_date == 'latest':
+        forecast_date = utils.get_last_forecast_date(data_dir, region)
+
     region_path = utils.check_region_path(data_dir, region)
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
@@ -161,6 +164,9 @@ def _get_analogs(data_dir: str, region: str, forecast_date: str, method: str,
     """
     Synchronous function to get the analogs from the netCDF file.
     """
+    if forecast_date == 'latest':
+        forecast_date = utils.get_last_forecast_date(data_dir, region)
+
     region_path = utils.check_region_path(data_dir, region)
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
@@ -200,6 +206,9 @@ def _get_analog_dates(data_dir: str, region: str, forecast_date: str, method: st
     """
     Synchronous function to get the analog dates from the netCDF file.
     """
+    if forecast_date == 'latest':
+        forecast_date = utils.get_last_forecast_date(data_dir, region)
+
     region_path = utils.check_region_path(data_dir, region)
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
@@ -229,6 +238,9 @@ def _get_analog_criteria(data_dir: str, region: str, forecast_date: str, method:
     """
     Synchronous function to get the analog criteria from the netCDF file.
     """
+    if forecast_date == 'latest':
+        forecast_date = utils.get_last_forecast_date(data_dir, region)
+
     region_path = utils.check_region_path(data_dir, region)
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
@@ -258,6 +270,9 @@ def _get_analog_values(data_dir: str, region: str, forecast_date: str, method: s
     """
     Synchronous function to get the precipitation values from the netCDF file.
     """
+    if forecast_date == 'latest':
+        forecast_date = utils.get_last_forecast_date(data_dir, region)
+
     region_path = utils.check_region_path(data_dir, region)
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
@@ -291,6 +306,9 @@ def _get_analog_values_percentiles(
     Synchronous function to get the precipitation values for specific percentiles
     from the netCDF file.
     """
+    if forecast_date == 'latest':
+        forecast_date = utils.get_last_forecast_date(data_dir, region)
+
     region_path = utils.check_region_path(data_dir, region)
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
@@ -332,6 +350,9 @@ def _get_analog_values_best(
     Synchronous function to get the precipitation values for the best analogs
     from the netCDF file.
     """
+    if forecast_date == 'latest':
+        forecast_date = utils.get_last_forecast_date(data_dir, region)
+
     region_path = utils.check_region_path(data_dir, region)
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
@@ -366,6 +387,9 @@ def _get_entities_analog_values_percentile(
     Synchronous function to get the precipitation values for a specific percentile
     from the netCDF file.
     """
+    if forecast_date == 'latest':
+        forecast_date = utils.get_last_forecast_date(data_dir, region)
+
     region_path = utils.check_region_path(data_dir, region)
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
@@ -407,6 +431,9 @@ def _get_series_analog_values_best(
     Synchronous function to get the time series of the best analog values
     from the netCDF file.
     """
+    if forecast_date == 'latest':
+        forecast_date = utils.get_last_forecast_date(data_dir, region)
+
     region_path = utils.check_region_path(data_dir, region)
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
@@ -445,6 +472,9 @@ def _get_series_analog_values_percentiles(
     Synchronous function to get the time series for specific percentiles
     from the netCDF file.
     """
+    if forecast_date == 'latest':
+        forecast_date = utils.get_last_forecast_date(data_dir, region)
+
     region_path = utils.check_region_path(data_dir, region)
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
@@ -501,6 +531,9 @@ def _get_series_analog_values_percentiles_history(
     Synchronous function to get the time series for historical percentiles
     from the netCDF file.
     """
+    if forecast_date == 'latest':
+        forecast_date = utils.get_last_forecast_date(data_dir, region)
+
     region_path = utils.check_region_path(data_dir, region)
     diff = np.timedelta64(3, 'h')
     dt = utils.convert_to_datetime(forecast_date)

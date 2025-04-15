@@ -70,41 +70,11 @@ def _get_last_forecast_date(data_dir: str, region: str):
     Synchronous function to get the last forecast date from the filenames.
     Directory structure: region_path/YYYY/MM/DD/YYYY-MM-DD_HH.method.region.nc
     """
-    region_path = utils.check_region_path(data_dir, region)
-
-    def get_latest_subdir(path):
-        subdirs = sorted(os.listdir(path), reverse=True)
-        if not subdirs:
-            raise ValueError(f"No subdirectories found in {path}")
-        return subdirs[0]
-
-    # Get the latest year, month, and day
-    year = get_latest_subdir(region_path)
-    month = get_latest_subdir(f"{region_path}/{year}")
-    day = get_latest_subdir(f"{region_path}/{year}/{month}")
-
-    # Get the latest file
-    files = sorted(os.listdir(f"{region_path}/{year}/{month}/{day}"), reverse=True)
-    if not files:
-        raise ValueError(f"No files found in {region_path}/{year}/{month}/{day}")
-
-    # Extract the hour from the latest file
-    last_file = files[0]
-    parts = last_file.split("_")
-    if len(parts) < 2:
-        raise ValueError(f"Invalid file format ({last_file})")
-    hour = parts[1].split(".")[0]
-
-    last_forecast_date = f"{year}-{month}-{day}T{hour}"
-
-    # Check that the forecast date is valid
-    _ = utils.convert_to_datetime(last_forecast_date)
-
     return {
         "parameters" : {
             "region": region
         },
-        "last_forecast_date": last_forecast_date
+        "last_forecast_date": utils.get_last_forecast_date(data_dir, region)
     }
 
 
@@ -113,7 +83,7 @@ def _get_methods_from_netcdf(data_dir: str, region: str, forecast_date: str):
 
     # Synchronous function to get methods from the NetCDF file
     if forecast_date == 'latest':
-        forecast_date = _get_last_forecast_date(data_dir, region)
+        forecast_date = utils.get_last_forecast_date(data_dir, region)
 
     files = utils.list_files(region_path, forecast_date)
 
@@ -147,7 +117,7 @@ def _get_method_configs_from_netcdf(data_dir: str, region: str, forecast_date: s
 
     # Synchronous function to get method configurations from the NetCDF file
     if forecast_date == 'latest':
-        forecast_date = _get_last_forecast_date(data_dir, region)
+        forecast_date = utils.get_last_forecast_date(data_dir, region)
 
     files = utils.list_files(region_path, forecast_date)
 
@@ -192,7 +162,7 @@ def _get_entities_from_netcdf(data_dir: str, region: str, forecast_date: str, me
 
     # Synchronous function to get entities from the NetCDF file
     if forecast_date == 'latest':
-        forecast_date = _get_last_forecast_date(data_dir, region)
+        forecast_date = utils.get_last_forecast_date(data_dir, region)
 
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
