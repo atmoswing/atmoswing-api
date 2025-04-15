@@ -6,7 +6,7 @@ from typing import List
 
 from atmoswing_api import config
 from atmoswing_api.app.services.meta import get_last_forecast_date, \
-    get_method_list, get_method_configs_list, get_entities_list
+    get_method_list, get_method_configs_list, get_entities_list, get_config_data
 from atmoswing_api.app.models.models import *
 
 router = APIRouter()
@@ -28,6 +28,16 @@ async def _handle_request(func, settings: config.Settings, region: str, **kwargs
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
+@router.get("/show-config",
+            summary="Show config")
+async def show_config(
+        settings: Annotated[config.Settings, Depends(get_settings)]):
+    """
+    Show the current configuration settings.
+    """
+    return await get_config_data(settings.data_dir)
 
 
 @router.get("/{region}/last-forecast-date",
