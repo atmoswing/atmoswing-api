@@ -1,14 +1,19 @@
 import logging
+import os
 from fastapi import FastAPI
 from atmoswing_api import config
 from atmoswing_api.app.routes import meta, forecasts, aggregations, docs
+
+# Ensure the directory for the log file exists
+log_file_path = config.Settings().data_dir + '/app.log'
+os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
 
 # Create a logger
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)  # Set the base level to DEBUG to capture all messages
 
 # File handler for errors
-file_handler = logging.FileHandler(config.Settings().data_dir + '/app.log')
+file_handler = logging.FileHandler(log_file_path)
 file_handler.setLevel(logging.ERROR)  # Log only errors and above to the file
 file_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 file_handler.setFormatter(file_formatter)
