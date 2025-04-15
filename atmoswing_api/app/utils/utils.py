@@ -6,7 +6,7 @@ from datetime import datetime, date, timedelta
 
 def check_region_path(data_dir: str, region: str) -> str:
     region_path = f"{data_dir}/{region}"
-    if not os.path.exists(region_path):
+    if not (os.path.exists(region_path) or os.path.islink(region_path)):
         raise FileNotFoundError(f"Region directory not found: {region}")
 
     return region_path
