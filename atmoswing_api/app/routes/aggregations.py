@@ -24,7 +24,7 @@ async def _handle_request(func, settings: config.Settings, region: str, **kwargs
         if result is None:
             raise ValueError("The result is None")
         return result
-    except FileNotFoundError:
+    except FileNotFoundError as e:
         logging.error(f"Files not found for region: {region} "
                       f"(directory: {settings.data_dir})")
         logging.error(f"Error details: {e}")
