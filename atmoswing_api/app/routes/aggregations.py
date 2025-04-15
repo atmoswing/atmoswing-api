@@ -25,7 +25,9 @@ async def _handle_request(func, settings: config.Settings, region: str, **kwargs
             raise ValueError("The result is None")
         return result
     except FileNotFoundError:
-        logging.error(f"Files not found for region: {region}")
+        logging.error(f"Files not found for region: {region} "
+                      f"(directory: {settings.data_dir})")
+        logging.error(f"Error details: {e}")
         raise HTTPException(status_code=404, detail="Region or forecast not found")
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}")

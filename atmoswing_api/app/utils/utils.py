@@ -1,15 +1,24 @@
 import os
 import glob
 import numpy as np
+from pathlib import Path
 from datetime import datetime, date, timedelta
 
 
 def check_region_path(data_dir: str, region: str) -> str:
-    region_path = f"{data_dir}/{region}"
-    if not (os.path.exists(region_path) or os.path.islink(region_path)):
+    region_path = Path(data_dir) / region
+    region_path = region_path.resolve(strict=False)
+
+    if region_path.is_symlink():
+        if not region_path.exists():
+            raise FileNotFoundError(f"Broken symlink: {region}")
+        else:
+            return str(region_path)
+
+    if not region_path.exists():
         raise FileNotFoundError(f"Region directory not found: {region}")
 
-    return region_path
+    return str(region_path)
 
 
 def convert_to_date(date_str: str) -> date:
