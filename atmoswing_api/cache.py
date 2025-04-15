@@ -1,10 +1,9 @@
+import logging
 import redis
 import json
 import hashlib
 import functools
 import os
-
-from atmoswing_api.logger import logging
 
 # Try to connect to Redis
 try:
