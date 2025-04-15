@@ -11,12 +11,12 @@ def check_region_path(data_dir: str, region: str) -> str:
 
     if region_path.is_symlink():
         if not region_path.exists():
-            raise FileNotFoundError(f"Broken symlink: {region}")
+            raise FileNotFoundError(f"Broken symlink: {region_path}")
         else:
             return str(region_path)
 
     if not region_path.exists():
-        raise FileNotFoundError(f"Region directory not found: {region}")
+        raise FileNotFoundError(f"Region directory not found: {region_path}")
 
     return str(region_path)
 
