@@ -1,3 +1,4 @@
+import logging
 import redis
 import json
 import hashlib
@@ -14,6 +15,7 @@ try:
     redis_client.ping()  # Test connection
     redis_available = True
 except (redis.ConnectionError, redis.TimeoutError):
+    logging.exception("Redis is not available")
     redis_client = None
     redis_available = False
 

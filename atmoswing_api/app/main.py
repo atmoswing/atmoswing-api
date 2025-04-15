@@ -1,15 +1,27 @@
 import logging
 from fastapi import FastAPI
+from atmoswing_api import config
 from atmoswing_api.app.routes import meta, forecasts, aggregations, docs
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s -%(levelname)s - %(message)s",
-    handlers=[
-        logging.StreamHandler()
-    ]
-)
+# Create a logger
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)  # Set the base level to DEBUG to capture all messages
+
+# File handler for errors
+file_handler = logging.FileHandler(config.Settings().data_dir + '/app.log')
+file_handler.setLevel(logging.ERROR)  # Log only errors and above to the file
+file_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(file_formatter)
+
+# Stream handler for terminal output
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.INFO)  # Log info and above to the terminal
+stream_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+stream_handler.setFormatter(stream_formatter)
+
+# Add handlers to the logger
+logger.addHandler(file_handler)
+logger.addHandler(stream_handler)
 
 app = FastAPI(
     title="AtmoSwing Web Forecast API",

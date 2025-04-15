@@ -15,13 +15,6 @@ debug = False
 def get_settings():
     return config.Settings()
 
-# Configure logging to write to a file
-logging.basicConfig(
-    filename=config.Settings().data_dir + '/app.log',
-    level=logging.ERROR,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-
 
 # Helper function to handle requests and catch exceptions
 async def _handle_request(func, settings: config.Settings, region: str, **kwargs):
