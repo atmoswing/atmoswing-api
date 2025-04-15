@@ -72,6 +72,44 @@ def get_files_pattern(region_path: str, datetime_str: str, method='*') -> str:
     return f"{path}/{file_pattern}"
 
 
+def get_last_forecast_date(data_dir: str, region: str):
+    """
+    Get the last forecast date from the filenames.
+    Directory structure: region_path/YYYY/MM/DD/YYYY-MM-DD_HH.method.region.nc
+    """
+    region_path = check_region_path(data_dir, region)
+
+    def get_latest_subdir(path):
+        subdirs = sorted(os.listdir(path), reverse=True)
+        if not subdirs:
+            raise ValueError(f"No subdirectories found in {path}")
+        return subdirs[0]
+
+    # Get the latest year, month, and day
+    year = get_latest_subdir(region_path)
+    month = get_latest_subdir(f"{region_path}/{year}")
+    day = get_latest_subdir(f"{region_path}/{year}/{month}")
+
+    # Get the latest file
+    files = sorted(os.listdir(f"{region_path}/{year}/{month}/{day}"), reverse=True)
+    if not files:
+        raise ValueError(f"No files found in {region_path}/{year}/{month}/{day}")
+
+    # Extract the hour from the latest file
+    last_file = files[0]
+    parts = last_file.split("_")
+    if len(parts) < 2:
+        raise ValueError(f"Invalid file format ({last_file})")
+    hour = parts[1].split(".")[0]
+
+    last_forecast_date = f"{year}-{month}-{day}T{hour}"
+
+    # Check that the forecast date is valid
+    _ = convert_to_datetime(last_forecast_date)
+
+    return last_forecast_date
+
+
 def list_files(region_path: str, datetime_str: str) -> list:
     full_pattern = get_files_pattern(region_path, datetime_str)
 

@@ -47,6 +47,9 @@ def _get_entities_analog_values_percentile(
     Synchronous function to get the precipitation values for a specific percentile
     from the netCDF file.
     """
+    if forecast_date == 'latest':
+        forecast_date = utils.get_last_forecast_date(data_dir, region)
+
     region_path = utils.check_region_path(data_dir, region)
     pattern = utils.get_files_pattern(region_path, forecast_date, method)
     files = sorted(glob.glob(pattern))
@@ -111,6 +114,9 @@ def _get_series_synthesis_per_method(data_dir: str, region: str, forecast_date: 
     Synchronous function to get the largest analog values for a given region, date,
     and percentile.
     """
+    if forecast_date == 'latest':
+        forecast_date = utils.get_last_forecast_date(data_dir, region)
+
     region_path = utils.check_region_path(data_dir, region)
     pattern = utils.get_files_pattern(region_path, forecast_date)
     files = sorted(glob.glob(pattern))
@@ -190,6 +196,9 @@ def _get_series_synthesis_total(data_dir: str, region: str, forecast_date: str,
     Synchronous function to get the largest analog values for a given region, date,
     and percentile.
     """
+    if forecast_date == 'latest':
+        forecast_date = utils.get_last_forecast_date(data_dir, region)
+
     region_path = utils.check_region_path(data_dir, region)
     largest_values_per_method = _get_series_synthesis_per_method(
         data_dir, region, forecast_date, percentile, normalize)
