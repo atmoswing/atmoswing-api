@@ -5,6 +5,13 @@ import os
 from atmoswing_api.app.utils import utils
 
 
+async def get_config_data(data_dir: str):
+    """
+    Get the configuration data from the settings.
+    """
+    return await asyncio.to_thread(_get_config_data, data_dir)
+
+
 async def get_last_forecast_date(data_dir: str, region: str):
     """
     Get the last available forecast date for a given region.
@@ -38,6 +45,25 @@ async def get_entities_list(data_dir: str, region: str, forecast_date: str, meth
     return await asyncio.to_thread(_get_entities_from_netcdf, data_dir, region,
                                    forecast_date, method, configuration)
 
+
+def _get_config_data(data_dir: str):
+    """
+    Synchronous function to get the configuration data from the settings.
+    """
+    regions_list = []
+    errors = []
+
+    # List the regions (directories) in the data directory
+    try:
+        regions_list = os.listdir(data_dir)
+    except FileNotFoundError:
+        errors.append(f"Data directory not found: {data_dir}")
+
+    return {
+        "data_dir": data_dir,
+        "regions": regions_list,
+        "errors": errors
+    }
 
 def _get_last_forecast_date(data_dir: str, region: str):
     """
