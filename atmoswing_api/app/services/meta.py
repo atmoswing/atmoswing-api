@@ -55,7 +55,8 @@ def _get_config_data(data_dir: str):
 
     # List the regions (directories) in the data directory
     try:
-        regions_list = os.listdir(data_dir)
+        regions_list = [d for d in os.listdir(data_dir) if
+                        os.path.isdir(os.path.join(data_dir, d))]
     except FileNotFoundError:
         errors.append(f"Data directory not found: {data_dir}")
 
