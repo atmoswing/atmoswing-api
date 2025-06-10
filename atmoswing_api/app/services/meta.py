@@ -46,6 +46,15 @@ async def get_entities_list(data_dir: str, region: str, forecast_date: str, meth
                                    forecast_date, method, configuration)
 
 
+async def get_relevant_entities_list(data_dir: str, region: str, forecast_date: str,
+                                     method: str, configuration: str):
+    """
+    Get the list of relevant entities for a given region, forecast_date, method, and configuration.
+    """
+    return await asyncio.to_thread(_get_relevant_entities_from_netcdf, data_dir,
+                                   region, forecast_date, method, configuration)
+
+
 def _get_config_data(data_dir: str):
     """
     Synchronous function to get the configuration data from the settings.
@@ -55,7 +64,8 @@ def _get_config_data(data_dir: str):
 
     # List the regions (directories) in the data directory
     try:
-        regions_list = os.listdir(data_dir)
+        regions_list = [d for d in os.listdir(data_dir) if
+                        os.path.isdir(os.path.join(data_dir, d))]
     except FileNotFoundError:
         errors.append(f"Data directory not found: {data_dir}")
 
@@ -180,6 +190,57 @@ def _get_entities_from_netcdf(data_dir: str, region: str, forecast_date: str, me
 
         # Create a list of dictionaries with the entity information
         for i in range(len(station_ids)):
+            entity = {
+                "id": int(station_ids[i]),
+                "name": str(station_names[i]),
+                "x": float(station_x_coords[i]),
+                "y": float(station_y_coords[i])
+            }
+
+            if station_official_ids[i]:
+                entity["official_id"] = str(station_official_ids[i])
+
+            entities.append(entity)
+
+    return {
+        "parameters": {
+            "region": region,
+            "forecast_date": utils.convert_to_datetime(forecast_date),
+            "method": method,
+            "configuration": configuration
+        },
+        "entities": entities
+    }
+
+
+def _get_relevant_entities_from_netcdf(data_dir: str, region: str, forecast_date: str,
+                                        method: str, configuration: str):
+    """
+    Get the list of relevant entities for a given region, forecast_date, method, and configuration.
+    """
+    region_path = utils.check_region_path(data_dir, region)
+
+    # Synchronous function to get entities from the NetCDF file
+    if forecast_date == 'latest':
+        forecast_date = utils.get_last_forecast_date(data_dir, region)
+
+    file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+
+    entities = []
+
+    # Open the NetCDF files and get the entities
+    with xr.open_dataset(file_path) as ds:
+        station_ids = ds.station_ids.values
+        station_official_ids = ds.station_official_ids.values
+        station_names = ds.station_names.values
+        station_x_coords = ds.station_x_coords.values
+        station_y_coords = ds.station_y_coords.values
+
+        # Create a list of dictionaries with the entity information
+        relevant_idx = utils.get_relevant_stations_idx(ds)
+        for i in relevant_idx:
             entity = {
                 "id": int(station_ids[i]),
                 "name": str(station_names[i]),

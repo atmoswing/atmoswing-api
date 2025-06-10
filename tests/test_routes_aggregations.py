@@ -48,7 +48,7 @@ def test_exception_file_not_found():
 
     response = client_wrong.get(
         "/aggregations/adn/2024-10-05T00/series-synthesis-per-method/90")
-    assert response.status_code == 404
+    assert response.status_code == 400
     data = response.json()
     assert "detail" in data
-    assert data["detail"] == "Region or forecast not found"
+    assert data["detail"].startswith("Region or forecast not found")

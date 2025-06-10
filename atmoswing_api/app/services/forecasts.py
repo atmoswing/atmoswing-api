@@ -121,7 +121,7 @@ async def get_series_analog_values_percentiles_history(
         entity: int, percentiles: list[int], number: int):
     """
     Get the time series for historical percentiles for a given region, date, method,
-    configuration, entity, and number of analogs.
+    configuration, entity, and number of past forecasts.
     """
     return await asyncio.to_thread(_get_series_analog_values_percentiles_history,
                                    data_dir, region, forecast_date, method,
@@ -176,7 +176,7 @@ def _get_analogs(data_dir: str, region: str, forecast_date: str, method: str,
 
     with xr.open_dataset(file_path) as ds:
         entity_idx = utils.get_entity_index(ds, entity)
-        start_idx, end_idx = utils.get_row_indices(ds, target_date)
+        start_idx, end_idx, target_date = utils.get_row_indices(ds, target_date)
         analog_dates = [date.astype('datetime64[s]').item() for date in
                         ds.analog_dates.values[start_idx:end_idx]]
         analog_criteria = ds.analog_criteria[start_idx:end_idx].astype(
@@ -193,6 +193,7 @@ def _get_analogs(data_dir: str, region: str, forecast_date: str, method: str,
             "region": region,
             "forecast_date": utils.convert_to_datetime(forecast_date),
             "target_date": target_date,
+            "lead_time": utils.compute_lead_time(forecast_date, target_date),
             "method": method,
             "configuration": configuration,
             "entity_id": entity,
@@ -217,7 +218,7 @@ def _get_analog_dates(data_dir: str, region: str, forecast_date: str, method: st
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
     with xr.open_dataset(file_path) as ds:
-        start_idx, end_idx = utils.get_row_indices(ds, target_date)
+        start_idx, end_idx, target_date = utils.get_row_indices(ds, target_date)
         analog_dates = [date.astype('datetime64[s]').item() for date in
                         ds.analog_dates.values[start_idx:end_idx]]
 
@@ -226,6 +227,7 @@ def _get_analog_dates(data_dir: str, region: str, forecast_date: str, method: st
             "region": region,
             "forecast_date": utils.convert_to_datetime(forecast_date),
             "target_date": target_date,
+            "lead_time": utils.compute_lead_time(forecast_date, target_date),
             "method": method,
             "configuration": configuration,
         },
@@ -249,7 +251,7 @@ def _get_analog_criteria(data_dir: str, region: str, forecast_date: str, method:
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
     with (xr.open_dataset(file_path) as ds):
-        start_idx, end_idx = utils.get_row_indices(ds, target_date)
+        start_idx, end_idx, target_date = utils.get_row_indices(ds, target_date)
         analog_criteria = ds.analog_criteria[start_idx:end_idx].astype(
             float).values.tolist()
 
@@ -258,6 +260,7 @@ def _get_analog_criteria(data_dir: str, region: str, forecast_date: str, method:
             "region": region,
             "forecast_date": utils.convert_to_datetime(forecast_date),
             "target_date": target_date,
+            "lead_time": utils.compute_lead_time(forecast_date, target_date),
             "method": method,
             "configuration": configuration,
         },
@@ -282,7 +285,7 @@ def _get_analog_values(data_dir: str, region: str, forecast_date: str, method: s
 
     with xr.open_dataset(file_path) as ds:
         entity_idx = utils.get_entity_index(ds, entity)
-        start_idx, end_idx = utils.get_row_indices(ds, target_date)
+        start_idx, end_idx, target_date = utils.get_row_indices(ds, target_date)
         values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
             float).values.tolist()
 
@@ -291,6 +294,7 @@ def _get_analog_values(data_dir: str, region: str, forecast_date: str, method: s
             "region": region,
             "forecast_date": utils.convert_to_datetime(forecast_date),
             "target_date": target_date,
+            "lead_time": utils.compute_lead_time(forecast_date, target_date),
             "method": method,
             "configuration": configuration,
             "entity_id": entity,
@@ -318,7 +322,7 @@ def _get_analog_values_percentiles(
 
     with xr.open_dataset(file_path) as ds:
         entity_idx = utils.get_entity_index(ds, entity)
-        start_idx, end_idx = utils.get_row_indices(ds, target_date)
+        start_idx, end_idx, target_date = utils.get_row_indices(ds, target_date)
         values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
             float).values
         values_sorted = np.sort(values)
@@ -333,6 +337,7 @@ def _get_analog_values_percentiles(
             "region": region,
             "forecast_date": utils.convert_to_datetime(forecast_date),
             "target_date": target_date,
+            "lead_time": utils.compute_lead_time(forecast_date, target_date),
             "method": method,
             "configuration": configuration,
             "entity_id": entity,
@@ -362,7 +367,7 @@ def _get_analog_values_best(
 
     with xr.open_dataset(file_path) as ds:
         entity_idx = utils.get_entity_index(ds, entity)
-        start_idx, end_idx = utils.get_row_indices(ds, target_date)
+        start_idx, end_idx, target_date = utils.get_row_indices(ds, target_date)
         end_idx = min(end_idx, start_idx + number)
         values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
             float).values
@@ -372,9 +377,11 @@ def _get_analog_values_best(
             "region": region,
             "forecast_date": utils.convert_to_datetime(forecast_date),
             "target_date": target_date,
+            "lead_time": utils.compute_lead_time(forecast_date, target_date),
             "method": method,
             "configuration": configuration,
             "entity_id": entity,
+            "number": number
         },
         "values": values
     }
@@ -398,7 +405,7 @@ def _get_entities_analog_values_percentile(
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
     with xr.open_dataset(file_path) as ds:
-        start_idx, end_idx = utils.get_row_indices(ds, target_date)
+        start_idx, end_idx, target_date = utils.get_row_indices(ds, target_date)
         values = ds.analog_values_raw[:, start_idx:end_idx].astype(float).values
         values_sorted = np.sort(values, axis=1)
         station_ids = ds.station_ids.values.tolist()
@@ -415,6 +422,7 @@ def _get_entities_analog_values_percentile(
             "region": region,
             "forecast_date": utils.convert_to_datetime(forecast_date),
             "target_date": target_date,
+            "lead_time": utils.compute_lead_time(forecast_date, target_date),
             "method": method,
             "configuration": configuration,
             "percentile": percentile,
@@ -458,7 +466,8 @@ def _get_series_analog_values_best(
             "forecast_date": utils.convert_to_datetime(forecast_date),
             "method": method,
             "configuration": configuration,
-            "entity_id": entity
+            "entity_id": entity,
+            "number": number
         },
         "target_dates": target_dates,
         "series_values": series_values
@@ -543,7 +552,7 @@ def _get_series_analog_values_percentiles_history(
     while True:
         if counter_found >= number:
             break
-        if counter_tot > 100:
+        if counter_tot > 50:
             break
 
         counter_tot += 1
@@ -568,7 +577,8 @@ def _get_series_analog_values_percentiles_history(
             "method": method,
             "configuration": configuration,
             "entity_id": entity,
-            "percentiles": percentiles
+            "percentiles": percentiles,
+            "number": number
         },
         "past_forecasts": forecasts
     }

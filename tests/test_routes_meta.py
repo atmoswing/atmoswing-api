@@ -40,6 +40,12 @@ def test_list_entities():
     data = response.json()
     assert "entities" in data
 
+def test_list_relevant_entities():
+    response = client.get("/meta/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/relevant-entities")
+    assert response.status_code == 200
+    data = response.json()
+    assert "entities" in data
+
 def test_exception_file_not_found():
     @lru_cache
     def get_settings_wrong():
@@ -51,7 +57,7 @@ def test_exception_file_not_found():
     client_wrong = TestClient(app)
 
     response = client_wrong.get("/meta/adn/2024-10-05T00/methods")
-    assert response.status_code == 404
+    assert response.status_code == 400
     data = response.json()
     assert "detail" in data
-    assert data["detail"] == "Region or forecast not found"
+    assert data["detail"].startswith("Region or forecast not found")

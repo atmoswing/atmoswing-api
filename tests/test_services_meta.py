@@ -4,7 +4,7 @@ from unittest.mock import patch, MagicMock
 
 from atmoswing_api.app.services.meta import get_last_forecast_date, \
     _get_last_forecast_date, get_method_list, _get_methods_from_netcdf, \
-    get_method_configs_list, get_entities_list
+    get_method_configs_list, get_entities_list, get_relevant_entities_list
 
 # Path to the data directory
 cwd = os.path.dirname(os.path.abspath(__file__))
@@ -372,6 +372,33 @@ async def test_get_entities_list():
     }
 
     assert result["entities"][5] == {
+        "id": 6,
+        "name": "Haute Maurienne",
+        "x": 1006560,
+        "y": 6473617
+    }
+
+@pytest.mark.asyncio
+async def test_get_relevant_entities_list():
+    # Mock inputs
+    region = "adn"
+    date = "2024-10-05T00"
+    method = "4Zo-GFS"
+    configuration = "Alpes_Nord"
+
+    # Call the async function under test
+    result = await get_relevant_entities_list(
+        data_dir, region, date, method, configuration)
+
+    # Assertions
+    assert result["entities"][0] == {
+        "id": 1,
+        "name": "Arly",
+        "x": 973795,
+        "y": 6524123
+    }
+
+    assert result["entities"][4] == {
         "id": 6,
         "name": "Haute Maurienne",
         "x": 1006560,

@@ -7,7 +7,8 @@ from typing import List
 from atmoswing_api import config
 from atmoswing_api.cache import *
 from atmoswing_api.app.services.meta import get_last_forecast_date, \
-    get_method_list, get_method_configs_list, get_entities_list, get_config_data
+    get_method_list, get_method_configs_list, get_entities_list, get_config_data, \
+    get_relevant_entities_list
 from atmoswing_api.app.models.models import *
 
 router = APIRouter()
@@ -26,10 +27,10 @@ async def _handle_request(func, settings: config.Settings, region: str, **kwargs
         logging.error(f"Files not found for region: {region} "
                       f"(directory: {settings.data_dir})")
         logging.error(f"Error details: {e}")
-        raise HTTPException(status_code=404, detail="Region or forecast not found")
+        raise HTTPException(status_code=400, detail=f"Region or forecast not found ({e})")
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error ({e})")
 
 
 @router.get("/show-config",
@@ -101,5 +102,24 @@ async def list_entities(
     Get the list of available entities for a given region, forecast_date, method, and configuration.
     """
     return await _handle_request(get_entities_list, settings, region,
+                                 forecast_date=forecast_date, method=method,
+                                 configuration=configuration)
+
+
+@redis_cache(ttl=3600)
+@router.get("/{region}/{forecast_date}/{method}/{configuration}/relevant-entities",
+            summary="List of available entities",
+            response_model=EntitiesListResponse,
+            response_model_exclude_none=True)
+async def list_entities(
+        region: str,
+        forecast_date: str,
+        method: str,
+        configuration: str,
+        settings: Annotated[config.Settings, Depends(get_settings)]):
+    """
+    Get the list of available entities for a given region, forecast_date, method, and configuration.
+    """
+    return await _handle_request(get_relevant_entities_list, settings, region,
                                  forecast_date=forecast_date, method=method,
                                  configuration=configuration)

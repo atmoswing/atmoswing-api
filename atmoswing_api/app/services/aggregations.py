@@ -71,10 +71,10 @@ def _get_entities_analog_values_percentile(
                 all_station_ids = ds.station_ids.values.tolist()
             else:
                 assert all_station_ids == ds.station_ids.values.tolist()
-            station_indices = _get_relevant_stations_idx(ds)
+            station_indices = utils.get_relevant_stations_idx(ds)
 
             # Extracting the values
-            start_idx, end_idx = utils.get_row_indices(ds, target_date)
+            start_idx, end_idx, target_date = utils.get_row_indices(ds, target_date)
             if values is None:
                 values = np.ones((len(all_station_ids),)) * np.nan
                 values_normalized = np.ones((len(all_station_ids),)) * np.nan
@@ -99,8 +99,10 @@ def _get_entities_analog_values_percentile(
             "region": region,
             "forecast_date": utils.convert_to_datetime(forecast_date),
             "target_date": target_date,
+            "lead_time": utils.compute_lead_time(forecast_date, target_date),
             "method": method,
             "percentile": percentile,
+            "normalize": normalize
         },
         "entity_ids": all_station_ids,
         "values": values.tolist(),
@@ -146,7 +148,7 @@ def _get_series_synthesis_per_method(data_dir: str, region: str, forecast_date: 
             method_idx = method_ids.index(method_id)
 
             # Select the relevant stations
-            station_indices = _get_relevant_stations_idx(ds)
+            station_indices = utils.get_relevant_stations_idx(ds)
 
             # Extracting the values
             for lead_time_idx in range(len(analogs_nb)):
@@ -185,6 +187,7 @@ def _get_series_synthesis_per_method(data_dir: str, region: str, forecast_date: 
             "region": region,
             "forecast_date": utils.convert_to_datetime(forecast_date),
             "percentile": percentile,
+            "normalize": normalize
         },
         "series_percentiles": largest_values
     }
@@ -254,17 +257,10 @@ def _get_series_synthesis_total(data_dir: str, region: str, forecast_date: str,
             "region": region,
             "forecast_date": utils.convert_to_datetime(forecast_date),
             "percentile": percentile,
+            "normalize": normalize
         },
         "series_percentiles": output
     }
-
-
-def _get_relevant_stations_idx(ds):
-    relevant_station_ids = ds.predictand_station_ids
-    relevant_station_ids = [int(x) for x in relevant_station_ids.split(",")]
-    all_station_ids = ds.station_ids.values.tolist()
-    station_idx = [all_station_ids.index(x) for x in relevant_station_ids]
-    return station_idx
 
 
 def _get_reference_values(ds, normalize, station_indices):

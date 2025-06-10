@@ -11,11 +11,14 @@ class Parameters(BaseModel):
     region: str
     forecast_date: Optional[datetime] = None
     target_date: Optional[datetime] = None
+    lead_time: Optional[int] = None
     method: Optional[str] = None
     configuration: Optional[str] = None
     entity_id: Optional[int] = None
     percentile: Optional[int] = None
     percentiles: Optional[List[int]] = None
+    number: Optional[int] = None
+    normalize: Optional[int] = None
 
 
 class Method(BaseModel):
