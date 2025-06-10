@@ -1,10 +1,16 @@
 #!/usr/bin/env python
+import os
 from setuptools import setup
-from atmoswing_api.__version__ import __version__
+
+def read_version():
+    with open(os.path.join("atmoswing_api", "__version__.py")) as f:
+        for line in f:
+            if line.startswith("__version__"):
+                return line.split("=")[1].strip().strip("'\"")
 
 if __name__ == "__main__":
     setup(
         name="atmoswing-api",
-        version=__version__,
+        version=read_version(),
         author="Pascal Horton",
     )
