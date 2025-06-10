@@ -1,6 +1,8 @@
 import logging
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from atmoswing_api import config
 from atmoswing_api.app.routes import meta, forecasts, aggregations, docs
 
@@ -39,3 +41,16 @@ app.include_router(docs.router, tags=["Documentation"])
 app.include_router(meta.router, prefix="/meta", tags=["Metadata"])
 app.include_router(forecasts.router, prefix="/forecasts", tags=["Data from a single forecast"])
 app.include_router(aggregations.router, prefix="/aggregations", tags=["Aggregated forecast data"])
+
+@app.exception_handler(StarletteHTTPException)
+async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
+    if exc.status_code == 404:
+        return JSONResponse(
+            status_code=404,
+            content={"detail": "This route does not exist. "
+                               "Please check the URL or refer to the documentation."},
+        )
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )

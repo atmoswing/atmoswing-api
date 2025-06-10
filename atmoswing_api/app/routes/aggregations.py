@@ -29,10 +29,10 @@ async def _handle_request(func, settings: config.Settings, region: str, **kwargs
         logging.error(f"Files not found for region: {region} "
                       f"(directory: {settings.data_dir})")
         logging.error(f"Error details: {e}")
-        raise HTTPException(status_code=404, detail="Region or forecast not found")
+        raise HTTPException(status_code=400, detail=f"Region or forecast not found ({e})")
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error ({e})")
 
 
 @redis_cache(ttl=3600)
