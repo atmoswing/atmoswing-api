@@ -103,3 +103,22 @@ async def list_entities(
     return await _handle_request(get_entities_list, settings, region,
                                  forecast_date=forecast_date, method=method,
                                  configuration=configuration)
+
+
+@redis_cache(ttl=3600)
+@router.get("/{region}/{forecast_date}/{method}/{configuration}/relevant-entities",
+            summary="List of available entities",
+            response_model=EntitiesListResponse,
+            response_model_exclude_none=True)
+async def list_entities(
+        region: str,
+        forecast_date: str,
+        method: str,
+        configuration: str,
+        settings: Annotated[config.Settings, Depends(get_settings)]):
+    """
+    Get the list of available entities for a given region, forecast_date, method, and configuration.
+    """
+    return await _handle_request(get_relevant_entities_list, settings, region,
+                                 forecast_date=forecast_date, method=method,
+                                 configuration=configuration)

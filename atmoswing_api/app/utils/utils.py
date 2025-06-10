@@ -394,7 +394,31 @@ def get_entity_index(ds: xarray.Dataset, entity: int | str) -> int:
     entity_idx = int(indices[0]) if indices.size > 0 else -1
     if entity_idx == -1:
         raise ValueError(f"Entity not found: {entity}")
+
     return entity_idx
+
+
+def get_relevant_stations_idx(ds):
+    """
+    Get the indices of the relevant stations in the dataset based on the
+    `predictand_station_ids` attribute.
+
+    Parameters
+    ----------
+    ds: xarray.Dataset
+        The forecast dataset.
+
+    Returns
+    -------
+    station_idx: list
+        A list of indices corresponding to the relevant stations in the dataset.
+    """
+    relevant_station_ids = ds.predictand_station_ids
+    relevant_station_ids = [int(x) for x in relevant_station_ids.split(",")]
+    all_station_ids = ds.station_ids.values.tolist()
+    station_idx = [all_station_ids.index(x) for x in relevant_station_ids]
+
+    return station_idx
 
 
 def build_cumulative_frequency(size: int) -> np.ndarray:
