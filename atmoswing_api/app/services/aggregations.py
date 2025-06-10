@@ -74,7 +74,7 @@ def _get_entities_analog_values_percentile(
             station_indices = _get_relevant_stations_idx(ds)
 
             # Extracting the values
-            start_idx, end_idx = utils.get_row_indices(ds, target_date)
+            start_idx, end_idx, target_date = utils.get_row_indices(ds, target_date)
             if values is None:
                 values = np.ones((len(all_station_ids),)) * np.nan
                 values_normalized = np.ones((len(all_station_ids),)) * np.nan

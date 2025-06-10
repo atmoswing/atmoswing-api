@@ -22,6 +22,22 @@ def test_analog_dates():
     data = response.json()
     assert "analog_dates" in data
 
+def test_analog_dates_lead_time_hours():
+    response_1 = client.get("/forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/2024-10-07/analog-dates")
+    response_2 = client.get("/forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/48/analog-dates")
+    assert response_2.status_code == 200
+    data_1 = response_1.json()
+    data_2 = response_2.json()
+    assert data_1 == data_2
+
+def test_analog_dates_lead_time_hours_round_down():
+    response_1 = client.get("/forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/48/analog-dates")
+    response_2 = client.get("/forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/50/analog-dates")
+    assert response_2.status_code == 200
+    data_1 = response_1.json()
+    data_2 = response_2.json()
+    assert data_1 == data_2
+
 def test_analog_criteria():
     response = client.get("/forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/2024-10-07/analogy-criteria")
     assert response.status_code == 200

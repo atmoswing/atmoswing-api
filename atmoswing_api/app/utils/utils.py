@@ -132,24 +132,51 @@ def get_file_path(region_path: str, datetime_str: str, method: str,
 
 def get_row_indices(ds, target_date):
     # Get the start and end indices for the entity
-    target_date_idx = get_target_date_index(ds, target_date)
+    target_date_idx, target_date = get_target_date_index(ds, target_date)
     analogs_nb = ds.analogs_nb.values
     start_idx = int(np.sum(analogs_nb[:target_date_idx]))
     end_idx = start_idx + int(analogs_nb[target_date_idx])
-    return start_idx, end_idx
+    return start_idx, end_idx, target_date
 
 
 def get_target_date_index(ds, target_date):
+    """
+    Finds the index of the target date in the dataset and returns it along with the
+    found date.
+
+    Parameters
+    ----------
+    ds: xarray.Dataset
+        The dataset containing the target dates.
+    target_date: str or datetime
+        The target date to find in the dataset, can be a string or a datetime object.
+
+    Returns
+    -------
+    target_date_idx: int
+        The index of the target date in the dataset.
+    target_date_found: datetime
+        The date found in the dataset that matches the target date.
+    """
     # Find the lead time
     target_dates = ds.target_dates.values
     target_date = convert_to_datetime(target_date)
     target_date_idx = -1
+    target_date_found = None
     for i, date in enumerate(target_dates):
         date = np.datetime64(date).astype('datetime64[s]').item()
         if date == target_date:
             target_date_idx = i
+            target_date_found = date
             break
-    return target_date_idx
+        elif date < target_date:
+            target_date_idx = i
+            target_date_found = date
+        elif date > target_date:
+            break
+
+    return target_date_idx, target_date_found
+
 
 
 def get_entity_index(ds, entity):
