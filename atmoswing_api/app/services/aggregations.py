@@ -102,6 +102,7 @@ def _get_entities_analog_values_percentile(
             "lead_time": utils.compute_lead_time(forecast_date, target_date),
             "method": method,
             "percentile": percentile,
+            "normalize": normalize
         },
         "entity_ids": all_station_ids,
         "values": values.tolist(),
@@ -186,6 +187,7 @@ def _get_series_synthesis_per_method(data_dir: str, region: str, forecast_date: 
             "region": region,
             "forecast_date": utils.convert_to_datetime(forecast_date),
             "percentile": percentile,
+            "normalize": normalize
         },
         "series_percentiles": largest_values
     }
@@ -255,6 +257,7 @@ def _get_series_synthesis_total(data_dir: str, region: str, forecast_date: str,
             "region": region,
             "forecast_date": utils.convert_to_datetime(forecast_date),
             "percentile": percentile,
+            "normalize": normalize
         },
         "series_percentiles": output
     }

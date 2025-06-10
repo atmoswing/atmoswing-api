@@ -121,7 +121,7 @@ async def get_series_analog_values_percentiles_history(
         entity: int, percentiles: list[int], number: int):
     """
     Get the time series for historical percentiles for a given region, date, method,
-    configuration, entity, and number of analogs.
+    configuration, entity, and number of past forecasts.
     """
     return await asyncio.to_thread(_get_series_analog_values_percentiles_history,
                                    data_dir, region, forecast_date, method,
@@ -381,6 +381,7 @@ def _get_analog_values_best(
             "method": method,
             "configuration": configuration,
             "entity_id": entity,
+            "number": number
         },
         "values": values
     }
@@ -465,7 +466,8 @@ def _get_series_analog_values_best(
             "forecast_date": utils.convert_to_datetime(forecast_date),
             "method": method,
             "configuration": configuration,
-            "entity_id": entity
+            "entity_id": entity,
+            "number": number
         },
         "target_dates": target_dates,
         "series_values": series_values
@@ -550,7 +552,7 @@ def _get_series_analog_values_percentiles_history(
     while True:
         if counter_found >= number:
             break
-        if counter_tot > 100:
+        if counter_tot > 50:
             break
 
         counter_tot += 1
@@ -575,7 +577,8 @@ def _get_series_analog_values_percentiles_history(
             "method": method,
             "configuration": configuration,
             "entity_id": entity,
-            "percentiles": percentiles
+            "percentiles": percentiles,
+            "number": number
         },
         "past_forecasts": forecasts
     }

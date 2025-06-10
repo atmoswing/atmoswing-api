@@ -17,6 +17,8 @@ class Parameters(BaseModel):
     entity_id: Optional[int] = None
     percentile: Optional[int] = None
     percentiles: Optional[List[int]] = None
+    number: Optional[int] = None
+    normalize: Optional[int] = None
 
 
 class Method(BaseModel):
