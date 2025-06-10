@@ -2,13 +2,15 @@
 import os
 import shutil
 import datetime
-from pathlib import Path
-from atmoswing_api import config
+import argparse
 
-# Get the data path from the config
-settings = config.Settings()
-data_path = settings.data_dir
-keep_days = settings.keep_days
+parser = argparse.ArgumentParser(description="Remove forecasts older than X days.")
+parser.add_argument("--data-dir", default="/app/data", help="Path to the data directory")
+parser.add_argument("--keep-days", type=int, default=60, help="Number of days to keep")
+args = parser.parse_args()
+
+data_path = args.data_dir
+keep_days = args.keep_days
 
 # Loop through the regions (directories) in the data directory
 for region in os.listdir(data_path):
