@@ -12,7 +12,7 @@ os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
 
 # Create a logger
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)  # Set the base level to DEBUG to capture all messages
+#logger.setLevel(logging.DEBUG)  # Set the base level to DEBUG to capture all messages
 
 # File handler for errors
 file_handler = logging.FileHandler(log_file_path)

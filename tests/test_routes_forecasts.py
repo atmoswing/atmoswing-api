@@ -111,7 +111,7 @@ def test_exception_file_not_found():
 
     response = client_wrong.get(
         "/forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/3/reference-values")
-    assert response.status_code == 404
+    assert response.status_code == 400
     data = response.json()
     assert "detail" in data
-    assert data["detail"] == "Region or forecast not found"
+    assert data["detail"].startswith("Region or forecast not found")

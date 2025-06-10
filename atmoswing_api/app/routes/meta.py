@@ -7,7 +7,8 @@ from typing import List
 from atmoswing_api import config
 from atmoswing_api.cache import *
 from atmoswing_api.app.services.meta import get_last_forecast_date, \
-    get_method_list, get_method_configs_list, get_entities_list, get_config_data
+    get_method_list, get_method_configs_list, get_entities_list, get_config_data, \
+    get_relevant_entities_list
 from atmoswing_api.app.models.models import *
 
 router = APIRouter()
