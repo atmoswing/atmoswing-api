@@ -48,6 +48,15 @@ services:
     restart: unless-stopped
 ```
 
+## Cleanup
+
+To remove the past forecasts automatically, set a cron tab to run:
+
+```
+sudo docker exec atmoswing-api-main python3 /app/atmoswing_api/app/utils/cleaner.py --data-dir /app/data --keep-days 60
+```
+
+
 ## Development
 
 Run the local server from the IDE with: 
