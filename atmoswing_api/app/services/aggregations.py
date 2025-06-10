@@ -99,6 +99,7 @@ def _get_entities_analog_values_percentile(
             "region": region,
             "forecast_date": utils.convert_to_datetime(forecast_date),
             "target_date": target_date,
+            "lead_time": utils.compute_lead_time(forecast_date, target_date),
             "method": method,
             "percentile": percentile,
         },

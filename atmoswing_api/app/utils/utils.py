@@ -178,6 +178,34 @@ def get_target_date_index(ds, target_date):
     return target_date_idx, target_date_found
 
 
+def compute_lead_time(forecast_date, target_date):
+    """
+    Computes the lead time in hours between the forecast date and the target date.
+
+    Parameters
+    ----------
+    forecast_date: datetime
+        The forecast date.
+    target_date: datetime
+        The target date.
+
+    Returns
+    -------
+    lead_time: int
+        The lead time in hours.
+    """
+    if isinstance(forecast_date, str):
+        forecast_date = convert_to_datetime(forecast_date)
+    if isinstance(target_date, str):
+        target_date = convert_to_datetime(target_date)
+
+    if not isinstance(forecast_date, datetime) or not isinstance(target_date, datetime):
+        raise ValueError("Both forecast_date and target_date must be datetime objects.")
+
+    lead_time = (target_date - forecast_date).total_seconds() / 3600.0
+
+    return int(lead_time)
+
 
 def get_entity_index(ds, entity):
     # Find the entity ID
