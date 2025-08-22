@@ -45,9 +45,10 @@ app = FastAPI(
 
 # Set up rate limiter
 limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
+app.state.limiter = limiter
 
 # Add SlowAPI middleware for rate limiting
-app.add_middleware(SlowAPIMiddleware, limiter=limiter)
+app.add_middleware(SlowAPIMiddleware)
 
 # Configure CORS middleware -- disabled as it is not working as expected.
 #app.add_middleware(
