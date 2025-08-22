@@ -38,12 +38,13 @@ app = FastAPI(
     version=__version__,
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["GET", "OPTIONS"],
-    allow_headers=["*"],
-)
+# Configure CORS middleware -- disabled as it is not working as expected.
+#app.add_middleware(
+#    CORSMiddleware,
+#    allow_origins=["*"],
+#    allow_methods=["GET", "OPTIONS"],
+#    allow_headers=["*"],
+#)
 
 # Include the routes
 app.include_router(docs.router, tags=["Documentation"])
