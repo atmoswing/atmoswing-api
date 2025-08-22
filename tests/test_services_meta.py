@@ -262,8 +262,8 @@ async def test_get_method_configs_list_mock(
     # Ensure the mocked methods were called with expected arguments
     mock_check_region_path.assert_called_once_with("/mocked_path", "region1")
     mock_list_files.assert_called_once_with("/mocked_path/region1", "2023-01-01")
-    mock_open_dataset.assert_any_call("/mocked/file1.nc")
-    mock_open_dataset.assert_any_call("/mocked/file2.nc")
+    mock_open_dataset.assert_any_call("/mocked/file1.nc", engine="h5netcdf")
+    mock_open_dataset.assert_any_call("/mocked/file2.nc", engine="h5netcdf")
 
 
 @pytest.mark.asyncio
@@ -349,7 +349,7 @@ async def test_get_entities_list_mock(
     mock_check_region_path.assert_called_once_with(data_dir, region)
     mock_get_file_path.assert_called_once_with(region_path, date, method, configuration)
     mock_exists.assert_called_once_with(file_path)
-    mock_open_dataset.assert_called_once_with(file_path)
+    mock_open_dataset.assert_called_once_with(file_path, engine="h5netcdf")
 
 
 @pytest.mark.asyncio
