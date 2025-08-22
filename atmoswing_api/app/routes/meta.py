@@ -10,6 +10,7 @@ from atmoswing_api.app.services.meta import get_last_forecast_date, \
     get_method_list, get_method_configs_list, get_entities_list, get_config_data, \
     get_relevant_entities_list
 from atmoswing_api.app.models.models import *
+from atmoswing_api.app.utils.utils import sanitize_unicode_surrogates
 
 router = APIRouter()
 
@@ -67,8 +68,9 @@ async def list_methods(
     """
     Get the list of available methods for a given region.
     """
-    return await _handle_request(get_method_list, settings, region,
-                                 forecast_date=forecast_date)
+    result = await _handle_request(get_method_list, settings, region,
+                                   forecast_date=forecast_date)
+    return sanitize_unicode_surrogates(result)
 
 
 @redis_cache(ttl=3600)
@@ -83,8 +85,9 @@ async def list_methods_and_configs(
     """
     Get the list of available methods and configs for a given region.
     """
-    return await _handle_request(get_method_configs_list, settings, region,
-                                 forecast_date=forecast_date)
+    result = await _handle_request(get_method_configs_list, settings, region,
+                                   forecast_date=forecast_date)
+    return sanitize_unicode_surrogates(result)
 
 
 @redis_cache(ttl=3600)

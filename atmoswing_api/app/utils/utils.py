@@ -1,3 +1,4 @@
+import re
 import os
 import glob
 import xarray
@@ -448,3 +449,18 @@ def build_cumulative_frequency(size: int) -> np.ndarray:
     f *= divisor
 
     return f
+
+
+def sanitize_unicode_surrogates(obj):
+    """
+    Recursively remove surrogate unicode characters from all strings in a dict/list.
+    """
+    surrogate_pattern = re.compile(r'[\ud800-\udfff]')
+    if isinstance(obj, dict):
+        return {k: sanitize_unicode_surrogates(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [sanitize_unicode_surrogates(v) for v in obj]
+    elif isinstance(obj, str):
+        return surrogate_pattern.sub('', obj)
+    else:
+        return obj
