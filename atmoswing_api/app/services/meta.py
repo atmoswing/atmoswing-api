@@ -105,7 +105,7 @@ def _get_methods_from_netcdf(data_dir: str, region: str, forecast_date: str):
 
     # Open the NetCDF files and get the method IDs and names
     for file in files:
-        with xr.open_dataset(file) as ds:
+        with xr.open_dataset(file, engine="h5netcdf") as ds:
             method_id = ds.method_id
             method_name = ds.method_id_display
             if not any(method['id'] == method_id for method in methods):
@@ -139,7 +139,7 @@ def _get_method_configs_from_netcdf(data_dir: str, region: str, forecast_date: s
 
     # Open the NetCDF files and get the method IDs and configurations
     for file in files:
-        with xr.open_dataset(file) as ds:
+        with xr.open_dataset(file, engine="h5netcdf") as ds:
             method_id = ds.method_id
             method_name = ds.method_id_display
             config_id = ds.specific_tag
@@ -181,7 +181,7 @@ def _get_entities_from_netcdf(data_dir: str, region: str, forecast_date: str, me
     entities = []
 
     # Open the NetCDF files and get the entities
-    with xr.open_dataset(file_path) as ds:
+    with xr.open_dataset(file_path, engine="h5netcdf") as ds:
         station_ids = ds.station_ids.values
         station_official_ids = ds.station_official_ids.values
         station_names = ds.station_names.values
@@ -231,7 +231,7 @@ def _get_relevant_entities_from_netcdf(data_dir: str, region: str, forecast_date
     entities = []
 
     # Open the NetCDF files and get the entities
-    with xr.open_dataset(file_path) as ds:
+    with xr.open_dataset(file_path, engine="h5netcdf") as ds:
         station_ids = ds.station_ids.values
         station_official_ids = ds.station_official_ids.values
         station_names = ds.station_names.values

@@ -65,7 +65,7 @@ def _get_entities_analog_values_percentile(
 
     for file_path in files:
 
-        with xr.open_dataset(file_path) as ds:
+        with xr.open_dataset(file_path, engine="h5netcdf") as ds:
             # Select the relevant stations
             if all_station_ids is None:
                 all_station_ids = ds.station_ids.values.tolist()
@@ -131,7 +131,7 @@ def _get_series_synthesis_per_method(data_dir: str, region: str, forecast_date: 
 
     for file_path in files:
 
-        with xr.open_dataset(file_path) as ds:
+        with xr.open_dataset(file_path, engine="h5netcdf") as ds:
             analogs_nb = ds.analogs_nb.values
 
             # Select the relevant method

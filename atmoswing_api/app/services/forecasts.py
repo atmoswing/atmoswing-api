@@ -141,7 +141,7 @@ def _get_reference_values(data_dir: str, region: str, forecast_date: str, method
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"File not found: {file_path}")
 
-    with xr.open_dataset(file_path) as ds:
+    with xr.open_dataset(file_path, engine="h5netcdf") as ds:
         entity_idx = utils.get_entity_index(ds, entity)
         axis = ds.reference_axis.values.tolist()
         values = ds.reference_values[entity_idx, :].astype(float).values.tolist()
@@ -174,7 +174,7 @@ def _get_analogs(data_dir: str, region: str, forecast_date: str, method: str,
 
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
-    with xr.open_dataset(file_path) as ds:
+    with xr.open_dataset(file_path, engine="h5netcdf") as ds:
         entity_idx = utils.get_entity_index(ds, entity)
         start_idx, end_idx, target_date = utils.get_row_indices(ds, target_date)
         analog_dates = [date.astype('datetime64[s]').item() for date in
@@ -217,7 +217,7 @@ def _get_analog_dates(data_dir: str, region: str, forecast_date: str, method: st
 
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
-    with xr.open_dataset(file_path) as ds:
+    with xr.open_dataset(file_path, engine="h5netcdf") as ds:
         start_idx, end_idx, target_date = utils.get_row_indices(ds, target_date)
         analog_dates = [date.astype('datetime64[s]').item() for date in
                         ds.analog_dates.values[start_idx:end_idx]]
@@ -250,7 +250,7 @@ def _get_analog_criteria(data_dir: str, region: str, forecast_date: str, method:
 
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
-    with (xr.open_dataset(file_path) as ds):
+    with (xr.open_dataset(file_path, engine="h5netcdf") as ds):
         start_idx, end_idx, target_date = utils.get_row_indices(ds, target_date)
         analog_criteria = ds.analog_criteria[start_idx:end_idx].astype(
             float).values.tolist()
@@ -283,7 +283,7 @@ def _get_analog_values(data_dir: str, region: str, forecast_date: str, method: s
 
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
-    with xr.open_dataset(file_path) as ds:
+    with xr.open_dataset(file_path, engine="h5netcdf") as ds:
         entity_idx = utils.get_entity_index(ds, entity)
         start_idx, end_idx, target_date = utils.get_row_indices(ds, target_date)
         values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
@@ -320,7 +320,7 @@ def _get_analog_values_percentiles(
 
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
-    with xr.open_dataset(file_path) as ds:
+    with xr.open_dataset(file_path, engine="h5netcdf") as ds:
         entity_idx = utils.get_entity_index(ds, entity)
         start_idx, end_idx, target_date = utils.get_row_indices(ds, target_date)
         values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
@@ -365,7 +365,7 @@ def _get_analog_values_best(
 
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
-    with xr.open_dataset(file_path) as ds:
+    with xr.open_dataset(file_path, engine="h5netcdf") as ds:
         entity_idx = utils.get_entity_index(ds, entity)
         start_idx, end_idx, target_date = utils.get_row_indices(ds, target_date)
         end_idx = min(end_idx, start_idx + number)
@@ -404,7 +404,7 @@ def _get_entities_analog_values_percentile(
 
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
-    with xr.open_dataset(file_path) as ds:
+    with xr.open_dataset(file_path, engine="h5netcdf") as ds:
         start_idx, end_idx, target_date = utils.get_row_indices(ds, target_date)
         values = ds.analog_values_raw[:, start_idx:end_idx].astype(float).values
         values_sorted = np.sort(values, axis=1)
@@ -447,7 +447,7 @@ def _get_series_analog_values_best(
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"File not found: {file_path}")
 
-    with xr.open_dataset(file_path) as ds:
+    with xr.open_dataset(file_path, engine="h5netcdf") as ds:
         target_dates = [np.datetime64(date).astype('datetime64[s]').item() for date in
                         ds.target_dates.values]
         series_values = []
@@ -489,7 +489,7 @@ def _get_series_analog_values_percentiles(
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"File not found: {file_path}")
 
-    with xr.open_dataset(file_path) as ds:
+    with xr.open_dataset(file_path, engine="h5netcdf") as ds:
         entity_idx = utils.get_entity_index(ds, entity)
         analogs_nb = ds.analogs_nb.values
         series_values = np.ones((len(percentiles), len(analogs_nb))) * np.nan

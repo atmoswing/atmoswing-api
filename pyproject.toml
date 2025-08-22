@@ -10,7 +10,7 @@ dependencies = [
     "fastapi",
     "uvicorn[standard]",
     "xarray",
-    "netCDF4",
+    "h5netcdf",
     "pydantic",
     "pydantic-settings",
     "python-dotenv",
