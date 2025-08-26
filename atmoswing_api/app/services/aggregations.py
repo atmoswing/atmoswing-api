@@ -99,8 +99,8 @@ def _get_entities_analog_values_percentile(
                 ref_values = _get_reference_values(ds, normalize, station_indices)
                 values_normalized[station_indices] = values[station_indices] / ref_values
 
-                values = values.tolist()
-                values_normalized = values_normalized.tolist()
+    values = values.tolist()
+    values_normalized = values_normalized.tolist()
 
     return {
         "parameters": {
