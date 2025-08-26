@@ -78,6 +78,7 @@ def _get_entities_analog_values_percentile(
             if row_indices is None:
                 values = []
                 values_normalized = []
+                break
             else:
                 start_idx, end_idx, target_date = row_indices
                 if values is None:
