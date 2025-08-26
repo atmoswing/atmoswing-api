@@ -74,6 +74,7 @@ class EntitiesValuesPercentileResponse(BaseModel):
     parameters: Parameters
     entity_ids: List[int]
     values: List[Annotated[float, round_to(2)]]
+    values_normalized: List[Annotated[float, round_to(2)]]
 
 
 class EntitiesValuesPercentileAggregationResponse(BaseModel):
