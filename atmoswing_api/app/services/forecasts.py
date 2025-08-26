@@ -176,17 +176,21 @@ def _get_analogs(data_dir: str, region: str, forecast_date: str, method: str,
 
     with xr.open_dataset(file_path, engine="h5netcdf") as ds:
         entity_idx = utils.get_entity_index(ds, entity)
-        start_idx, end_idx, target_date = utils.get_row_indices(ds, target_date)
-        analog_dates = [date.astype('datetime64[s]').item() for date in
-                        ds.analog_dates.values[start_idx:end_idx]]
-        analog_criteria = ds.analog_criteria[start_idx:end_idx].astype(
-            float).values.tolist()
-        values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
-            float).values.tolist()
-        ranks = list(range(1, len(analog_dates) + 1))
-        analogs = [{"date": date, "criteria": criteria, "value": value, "rank": rank}
-                   for date, criteria, value, rank in
-                   zip(analog_dates, analog_criteria, values, ranks)]
+        row_indices = utils.get_row_indices(ds, target_date)
+        if row_indices is None:
+            analogs = []
+        else:
+            start_idx, end_idx, target_date = row_indices
+            analog_dates = [date.astype('datetime64[s]').item() for date in
+                            ds.analog_dates.values[start_idx:end_idx]]
+            analog_criteria = ds.analog_criteria[start_idx:end_idx].astype(
+                float).values.tolist()
+            values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
+                float).values.tolist()
+            ranks = list(range(1, len(analog_dates) + 1))
+            analogs = [{"date": date, "criteria": criteria, "value": value, "rank": rank}
+                       for date, criteria, value, rank in
+                       zip(analog_dates, analog_criteria, values, ranks)]
 
     return {
         "parameters": {
@@ -218,9 +222,13 @@ def _get_analog_dates(data_dir: str, region: str, forecast_date: str, method: st
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
     with xr.open_dataset(file_path, engine="h5netcdf") as ds:
-        start_idx, end_idx, target_date = utils.get_row_indices(ds, target_date)
-        analog_dates = [date.astype('datetime64[s]').item() for date in
-                        ds.analog_dates.values[start_idx:end_idx]]
+        row_indices = utils.get_row_indices(ds, target_date)
+        if row_indices is None:
+            analog_dates = []
+        else:
+            start_idx, end_idx, target_date = row_indices
+            analog_dates = [date.astype('datetime64[s]').item() for date in
+                            ds.analog_dates.values[start_idx:end_idx]]
 
     return {
         "parameters": {
@@ -251,9 +259,13 @@ def _get_analog_criteria(data_dir: str, region: str, forecast_date: str, method:
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
     with (xr.open_dataset(file_path, engine="h5netcdf") as ds):
-        start_idx, end_idx, target_date = utils.get_row_indices(ds, target_date)
-        analog_criteria = ds.analog_criteria[start_idx:end_idx].astype(
-            float).values.tolist()
+        row_indices = utils.get_row_indices(ds, target_date)
+        if row_indices is None:
+            analog_criteria = []
+        else:
+            start_idx, end_idx, target_date = row_indices
+            analog_criteria = ds.analog_criteria[start_idx:end_idx].astype(
+                float).values.tolist()
 
     return {
         "parameters": {
@@ -285,9 +297,13 @@ def _get_analog_values(data_dir: str, region: str, forecast_date: str, method: s
 
     with xr.open_dataset(file_path, engine="h5netcdf") as ds:
         entity_idx = utils.get_entity_index(ds, entity)
-        start_idx, end_idx, target_date = utils.get_row_indices(ds, target_date)
-        values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
-            float).values.tolist()
+        row_indices = utils.get_row_indices(ds, target_date)
+        if row_indices is None:
+            values = []
+        else:
+            start_idx, end_idx, target_date = row_indices
+            values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
+                float).values.tolist()
 
     return {
         "parameters": {
@@ -322,15 +338,19 @@ def _get_analog_values_percentiles(
 
     with xr.open_dataset(file_path, engine="h5netcdf") as ds:
         entity_idx = utils.get_entity_index(ds, entity)
-        start_idx, end_idx, target_date = utils.get_row_indices(ds, target_date)
-        values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
-            float).values
-        values_sorted = np.sort(values)
+        row_indices = utils.get_row_indices(ds, target_date)
+        if row_indices is None:
+            values = [None for _ in percentiles]
+        else:
+            start_idx, end_idx, target_date = row_indices
+            values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
+                float).values
+            values_sorted = np.sort(values)
 
-        # Compute the percentiles
-        frequencies = utils.build_cumulative_frequency(len(values))
-        values = [float(np.interp(percentile / 100, frequencies, values_sorted)) for
-                  percentile in percentiles]
+            # Compute the percentiles
+            frequencies = utils.build_cumulative_frequency(len(values))
+            values = [float(np.interp(percentile / 100, frequencies, values_sorted)) for
+                      percentile in percentiles]
 
     return {
         "parameters": {
@@ -367,10 +387,14 @@ def _get_analog_values_best(
 
     with xr.open_dataset(file_path, engine="h5netcdf") as ds:
         entity_idx = utils.get_entity_index(ds, entity)
-        start_idx, end_idx, target_date = utils.get_row_indices(ds, target_date)
-        end_idx = min(end_idx, start_idx + number)
-        values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
-            float).values
+        row_indices = utils.get_row_indices(ds, target_date)
+        if row_indices is None:
+            values = []
+        else:
+            start_idx, end_idx, target_date = row_indices
+            end_idx = min(end_idx, start_idx + number)
+            values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
+                float).values
 
     return {
         "parameters": {
@@ -405,28 +429,34 @@ def _get_entities_analog_values_percentile(
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
     with xr.open_dataset(file_path, engine="h5netcdf") as ds:
-        start_idx, end_idx, target_date = utils.get_row_indices(ds, target_date)
-        values = ds.analog_values_raw[:, start_idx:end_idx].astype(float).values
-        values_sorted = np.sort(values, axis=1)
         station_ids = ds.station_ids.values.tolist()
+        row_indices = utils.get_row_indices(ds, target_date)
+        if row_indices is None:
+            values = []
+            values_normalized = []
+        else:
+            start_idx, end_idx, target_date = row_indices
+            values = ds.analog_values_raw[:, start_idx:end_idx].astype(float).values
+            values_sorted = np.sort(values, axis=1)
 
-        # Compute the percentiles
-        n_entities = values_sorted.shape[0]
-        n_analogs = values_sorted.shape[1]
-        freq = utils.build_cumulative_frequency(n_analogs)
-        values = [float(np.interp(percentile / 100, freq, values_sorted[i, :])) for i in
-                  range(n_entities)]
+            # Compute the percentiles
+            n_entities = values_sorted.shape[0]
+            n_analogs = values_sorted.shape[1]
+            freq = utils.build_cumulative_frequency(n_analogs)
+            values = [float(np.interp(percentile / 100, freq, values_sorted[i, :])) for i in
+                      range(n_entities)]
 
-        # Get the reference values for normalization
-        axis = ds.reference_axis.values.tolist()
-        try:
-            ref_idx = axis.index(normalize)
-        except ValueError:
-            raise ValueError(f"normalize must be in {axis}")
-        ref_values = ds.reference_values[:, ref_idx].astype(float).values
+            # Get the reference values for normalization
+            axis = ds.reference_axis.values.tolist()
+            try:
+                ref_idx = axis.index(normalize)
+            except ValueError:
+                raise ValueError(f"normalize must be in {axis}")
+            ref_values = ds.reference_values[:, ref_idx].astype(float).values
 
-        # Normalize the values
-        values_normalized = np.array(values) / ref_values
+            # Normalize the values
+            values_normalized = np.array(values) / ref_values
+            values_normalized = values_normalized.tolist()
 
     return {
         "parameters": {
@@ -440,7 +470,7 @@ def _get_entities_analog_values_percentile(
         },
         "entity_ids": station_ids,
         "values": values,
-        "values_normalized": values_normalized.tolist(),
+        "values_normalized": values_normalized,
     }
 
 
