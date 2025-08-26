@@ -89,14 +89,15 @@ async def entities_analog_values_percentile(
         configuration: str,
         lead_time: int|str,
         percentile: int,
-        settings: Annotated[config.Settings, Depends(get_settings)]):
+        settings: Annotated[config.Settings, Depends(get_settings)],
+        normalize: int = Query(10)):
     """
     Get the precipitation values for a given region, forecast date, method, configuration, lead time, and percentile.
     """
     return await _handle_request(get_entities_analog_values_percentile, settings, region,
                                  forecast_date=forecast_date, method=method,
                                  configuration=configuration, lead_time=lead_time,
-                                 percentile=percentile)
+                                 percentile=percentile, normalize=normalize)
 
 
 @redis_cache(ttl=3600)

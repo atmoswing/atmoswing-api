@@ -83,14 +83,14 @@ async def get_analog_values_best(
 
 async def get_entities_analog_values_percentile(
         data_dir: str, region: str, forecast_date: str, method: str, configuration: str,
-        lead_time: int | str, percentile: int):
+        lead_time: int | str, percentile: int, normalize: int = 10):
     """
     Get the precipitation values for a given region, date, method, configuration,
     target date, and percentile.
     """
     return await asyncio.to_thread(_get_entities_analog_values_percentile, data_dir,
                                    region, forecast_date, method, configuration,
-                                   lead_time, percentile)
+                                   lead_time, percentile, normalize)
 
 
 async def get_series_analog_values_best(
@@ -389,7 +389,7 @@ def _get_analog_values_best(
 
 def _get_entities_analog_values_percentile(
         data_dir: str, region: str, forecast_date: str, method: str, configuration: str,
-        lead_time: int | str, percentile: int):
+        lead_time: int | str, percentile: int, normalize: int = 10):
     """
     Synchronous function to get the precipitation values for a specific percentile
     from the netCDF file.
@@ -417,6 +417,17 @@ def _get_entities_analog_values_percentile(
         values = [float(np.interp(percentile / 100, freq, values_sorted[i, :])) for i in
                   range(n_entities)]
 
+        # Get the reference values for normalization
+        axis = ds.reference_axis.values.tolist()
+        try:
+            ref_idx = axis.index(normalize)
+        except ValueError:
+            raise ValueError(f"normalize must be in {axis}")
+        ref_values = ds.reference_values[:, ref_idx].astype(float).values
+
+        # Normalize the values
+        values_normalized = np.array(values) / ref_values
+
     return {
         "parameters": {
             "region": region,
@@ -428,7 +439,8 @@ def _get_entities_analog_values_percentile(
             "percentile": percentile,
         },
         "entity_ids": station_ids,
-        "values": values
+        "values": values,
+        "values_normalized": values_normalized.tolist(),
     }
 
 
