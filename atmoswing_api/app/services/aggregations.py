@@ -74,25 +74,33 @@ def _get_entities_analog_values_percentile(
             station_indices = utils.get_relevant_stations_idx(ds)
 
             # Extracting the values
-            start_idx, end_idx, target_date = utils.get_row_indices(ds, target_date)
-            if values is None:
-                values = np.ones((len(all_station_ids),)) * np.nan
-                values_normalized = np.ones((len(all_station_ids),)) * np.nan
-            analog_values = ds.analog_values_raw[station_indices, start_idx:end_idx].astype(float).values
-            values_sorted = np.sort(analog_values, axis=1)
+            row_indices = utils.get_row_indices(ds, target_date)
+            if row_indices is None:
+                values = []
+                values_normalized = []
+            else:
+                start_idx, end_idx, target_date = row_indices
+                if values is None:
+                    values = np.ones((len(all_station_ids),)) * np.nan
+                    values_normalized = np.ones((len(all_station_ids),)) * np.nan
+                analog_values = ds.analog_values_raw[station_indices, start_idx:end_idx].astype(float).values
+                values_sorted = np.sort(analog_values, axis=1)
 
-            # Compute the percentiles
-            n_entities = values_sorted.shape[0]
-            n_analogs = values_sorted.shape[1]
-            freq = utils.build_cumulative_frequency(n_analogs)
+                # Compute the percentiles
+                n_entities = values_sorted.shape[0]
+                n_analogs = values_sorted.shape[1]
+                freq = utils.build_cumulative_frequency(n_analogs)
 
-            # Store in the values array
-            values[station_indices] = [float(np.interp(percentile / 100, freq, values_sorted[i, :])) for i in
-                      range(n_entities)]
+                # Store in the values array
+                values[station_indices] = [float(np.interp(percentile / 100, freq, values_sorted[i, :])) for i in
+                          range(n_entities)]
 
-            # Normalize the values
-            ref_values = _get_reference_values(ds, normalize, station_indices)
-            values_normalized[station_indices] = values[station_indices] / ref_values
+                # Normalize the values
+                ref_values = _get_reference_values(ds, normalize, station_indices)
+                values_normalized[station_indices] = values[station_indices] / ref_values
+
+    values = values.tolist()
+    values_normalized = values_normalized.tolist()
 
     return {
         "parameters": {
@@ -105,8 +113,8 @@ def _get_entities_analog_values_percentile(
             "normalize": normalize
         },
         "entity_ids": all_station_ids,
-        "values": values.tolist(),
-        "values_normalized": values_normalized.tolist()
+        "values": values,
+        "values_normalized": values_normalized
     }
 
 

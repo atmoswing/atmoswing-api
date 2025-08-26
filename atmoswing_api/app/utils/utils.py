@@ -272,7 +272,7 @@ def get_file_path(
 def get_row_indices(
         ds: xarray.Dataset,
         target_date : str | datetime
-) -> tuple[int, int, datetime]:
+) -> tuple[int, int, datetime]|None:
     """
     Get the start and end indices for the entity in the dataset based on the target date.
     The target date is used to find the corresponding index in the dataset's target dates.
@@ -294,7 +294,11 @@ def get_row_indices(
         The date found in the dataset that matches the target date.
     """
     # Get the start and end indices for the entity
-    target_date_idx, target_date = get_target_date_index(ds, target_date)
+    result = get_target_date_index(ds, target_date)
+    if result is None:
+        return None
+
+    target_date_idx, target_date = result
     analogs_nb = ds.analogs_nb.values
     start_idx = int(np.sum(analogs_nb[:target_date_idx]))
     end_idx = start_idx + int(analogs_nb[target_date_idx])
@@ -305,7 +309,7 @@ def get_row_indices(
 def get_target_date_index(
         ds: xarray.Dataset,
         target_date: str | datetime
-) -> tuple[int, datetime]:
+) -> tuple[int, datetime]|None:
     """
     Finds the index of the target date in the dataset and returns it along with the
     found date.
@@ -321,7 +325,7 @@ def get_target_date_index(
     -------
     target_date_idx: int
         The index of the target date in the dataset.
-    target_date_found: datetime
+    target_date_found: datetime|None
         The date found in the dataset that matches the target date.
     """
     # Find the lead time
@@ -332,10 +336,10 @@ def get_target_date_index(
     for i, date in enumerate(target_dates):
         date = np.datetime64(date).astype('datetime64[s]').item()
         if date == target_date:
-            target_date_idx = i
-            target_date_found = date
-            break
+            return i, date
         elif date < target_date:
+            if i == len(target_dates) - 1:
+                return None
             target_date_idx = i
             target_date_found = date
         elif date > target_date:
