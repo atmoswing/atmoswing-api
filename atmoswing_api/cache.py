@@ -5,6 +5,7 @@ import json
 import hashlib
 import functools
 import os
+import time
 
 # Create an asyncio Redis client (don't await at import time)
 redis_client = aioredis.Redis(
@@ -14,6 +15,9 @@ redis_client = aioredis.Redis(
 )
 # Assume available until a runtime error occurs; runtime operations will detect unavailability
 redis_available = True
+# When Redis becomes unavailable, set a retry timestamp instead of disabling forever
+_redis_retry_at = 0.0
+_redis_cooldown = 5.0  # seconds to wait before retrying
 
 
 def _make_cache_key(func, args, kwargs):
@@ -37,20 +41,33 @@ def redis_cache(ttl=3600):
     def decorator(func):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
-            global redis_available, redis_client
+            global redis_available, redis_client, _redis_retry_at
 
-            # If Redis is unavailable, bypass caching
+            # If Redis is currently marked unavailable, check whether it's time to retry.
+            now = time.time()
             if not redis_available:
-                return await func(*args, **kwargs)
+                if now >= _redis_retry_at:
+                    try:
+                        await redis_client.ping()
+                        redis_available = True
+                        logging.info("Reconnected to Redis; caching re-enabled")
+                    except RedisError:
+                        _redis_retry_at = now + _redis_cooldown
+                        logging.debug("Redis still unavailable; next retry at %s", _redis_retry_at)
+                        return await func(*args, **kwargs)
+                else:
+                    return await func(*args, **kwargs)
 
             cache_key = _make_cache_key(func, args, kwargs)
 
-            # Try to get the cached result; if Redis errors occur, disable caching at runtime
+            # Try to get the cached result; if Redis errors occur, schedule a retry and bypass caching
             try:
                 cached = await redis_client.get(cache_key)
             except RedisError:
-                logging.exception("Redis error during GET; disabling cache")
+                now = time.time()
+                _redis_retry_at = now + _redis_cooldown
                 redis_available = False
+                logging.exception("Redis error during GET; will retry after %s", _redis_retry_at)
                 return await func(*args, **kwargs)
 
             if cached is not None:
@@ -63,15 +80,17 @@ def redis_cache(ttl=3600):
             # Call the actual function
             result = await func(*args, **kwargs)
 
-            # Attempt to cache the result; if serialization fails or Redis errors occur, skip caching
+            # Attempt to cache the result; if serialization fails or Redis errors occur, skip caching and schedule retry
             try:
                 payload = json.dumps(result, default=str)
                 await redis_client.setex(cache_key, ttl, payload)
             except (TypeError, ValueError):
                 logging.debug("Result not JSON-serializable; skipping cache for key %s", cache_key)
             except RedisError:
-                logging.exception("Redis error during SETEX; disabling cache")
+                now = time.time()
+                _redis_retry_at = now + _redis_cooldown
                 redis_available = False
+                logging.exception("Redis error during SETEX; will retry after %s", _redis_retry_at)
 
             return result
 
