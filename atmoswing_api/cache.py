@@ -41,7 +41,7 @@ def redis_cache(ttl=3600):
     def decorator(func):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
-            global redis_available, redis_client, _redis_retry_at
+            global redis_available, _redis_retry_at
 
             # If Redis is currently marked unavailable, check whether it's time to retry.
             now = time.time()
