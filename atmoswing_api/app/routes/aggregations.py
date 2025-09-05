@@ -35,13 +35,13 @@ async def _handle_request(func, settings: config.Settings, region: str, **kwargs
         raise HTTPException(status_code=500, detail=f"Internal Server Error ({e})")
 
 
-@redis_cache(ttl=3600)
 @router.get("/{region}/{forecast_date}/{method}/{lead_time}/entities-values-percentile/{percentile}",
             summary="Analog values for a given region, forecast_date, method, "
                     "lead time, and percentile, aggregated by selecting the "
                     "relevant configuration per entity",
             response_model=EntitiesValuesPercentileAggregationResponse,
             response_model_exclude_none=True)
+@redis_cache(ttl=3600)
 async def entities_analog_values_percentile(
         region: str,
         forecast_date: str,
@@ -59,13 +59,13 @@ async def entities_analog_values_percentile(
                                  normalize=normalize)
 
 
-@redis_cache(ttl=3600)
 @router.get("/{region}/{forecast_date}/series-synthesis-per-method/{percentile}",
             summary="Largest values for a given region, forecast_date, method, "
                     "and percentile, aggregated by selecting the largest values for "
                     "the relevant configurations per entity",
             response_model=SeriesSynthesisPerMethodListResponse,
             response_model_exclude_none=True)
+@redis_cache(ttl=3600)
 async def series_synthesis_per_method(
         region: str,
         forecast_date: str,
@@ -80,12 +80,12 @@ async def series_synthesis_per_method(
                                  percentile=percentile, normalize=normalize)
 
 
-@redis_cache(ttl=3600)
 @router.get("/{region}/{forecast_date}/series-synthesis-total/{percentile}",
             summary="Largest values for a given region, forecast_date, "
                     "and percentile, aggregated by time steps",
             response_model=SeriesSynthesisTotalListResponse,
             response_model_exclude_none=True)
+@redis_cache(ttl=3600)
 async def series_synthesis_total(
         region: str,
         forecast_date: str,
