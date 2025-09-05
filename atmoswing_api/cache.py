@@ -96,3 +96,4 @@ def redis_cache(ttl=3600):
 
         return wrapper
     return decorator
+
