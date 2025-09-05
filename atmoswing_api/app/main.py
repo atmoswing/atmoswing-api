@@ -1,10 +1,10 @@
-import logging
-import os
+from atmoswing_api.app.utils.logger import create_logger
+logger = create_logger()
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from atmoswing_api import config
 from atmoswing_api.__version__ import __version__
 from atmoswing_api.app.routes import meta, forecasts, aggregations, docs
 from slowapi import Limiter
@@ -12,30 +12,6 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 import traceback
-
-# Ensure the directory for the log file exists
-log_file_path = config.Settings().data_dir + '/app.log'
-os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
-
-# Create a logger
-logger = logging.getLogger()
-#logger.setLevel(logging.DEBUG)  # Set the base level to DEBUG to capture all messages
-
-# File handler for errors
-file_handler = logging.FileHandler(log_file_path)
-file_handler.setLevel(logging.ERROR)  # Log only errors and above to the file
-file_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-file_handler.setFormatter(file_formatter)
-
-# Stream handler for terminal output
-stream_handler = logging.StreamHandler()
-stream_handler.setLevel(logging.INFO)  # Log info and above to the terminal
-stream_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-stream_handler.setFormatter(stream_formatter)
-
-# Add handlers to the logger
-logger.addHandler(file_handler)
-logger.addHandler(stream_handler)
 
 app = FastAPI(
     title="AtmoSwing Web Forecast API",
