@@ -1,13 +1,19 @@
+import logging
 from redis import asyncio as aioredis
 from redis.exceptions import RedisError
+import asyncio
 import json
 import hashlib
 import functools
 import os
 import time
 
+from atmoswing_api import config
 from atmoswing_api.app.utils.logger import get_logger
+
 logger = get_logger()
+debug_mode = config.Settings().debug
+logger.setLevel(logging.DEBUG if debug_mode else logging.INFO)
 
 # Create an asyncio Redis client (don't await at import time)
 redis_client = aioredis.Redis(
@@ -21,6 +27,12 @@ redis_available = True
 _redis_retry_at = 0.0
 _redis_cooldown = 5.0  # seconds to wait before retrying
 
+# Log Redis connection at startup
+try:
+    asyncio.get_event_loop().run_until_complete(redis_client.ping())
+    logger.info(f"Redis reachable at {os.getenv('REDIS_HOST', 'localhost')}:{os.getenv('REDIS_PORT', 6379)}; caching enabled")
+except Exception as e:
+    logger.warning(f"Redis not reachable at startup: {e}")
 
 def _make_cache_key(func, args, kwargs):
     """Create a stable cache key including module, function name, args and kwargs.
@@ -44,6 +56,7 @@ def redis_cache(ttl=3600):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             global redis_available, _redis_retry_at
+            logger.debug("Entering cache wrapper for %s", func.__name__)
 
             # If Redis is currently marked unavailable, check whether it's time to retry.
             now = time.time()
