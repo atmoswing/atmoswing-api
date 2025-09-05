@@ -42,3 +42,9 @@ def create_logger():
     logger.addHandler(stream_handler)
 
     return logger
+
+def get_logger():
+    """
+    Retrieve the configured root logger.
+    """
+    return logging.getLogger()
