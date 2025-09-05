@@ -56,7 +56,6 @@ def redis_cache(ttl=3600):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             global redis_available, _redis_retry_at
-            logger.info("Entering cache wrapper for %s", func.__name__)
 
             # If Redis is currently marked unavailable, check whether it's time to retry.
             now = time.time()
@@ -88,13 +87,13 @@ def redis_cache(ttl=3600):
 
             if cached is not None:
                 try:
-                    logger.info("Cache hit for key %s", cache_key)
+                    logger.debug("Cache hit for key %s", cache_key)
                     return json.loads(cached)
                 except (json.JSONDecodeError, TypeError):
                     logger.warning("Cache hit for key %s but failed to decode JSON", cache_key)
                     return cached
             else:
-                logger.info("Cache miss for key %s", cache_key)
+                logger.debug("Cache miss for key %s", cache_key)
 
             # Call the actual function
             result = await func(*args, **kwargs)
@@ -103,7 +102,7 @@ def redis_cache(ttl=3600):
             try:
                 payload = json.dumps(result, default=str)
                 await redis_client.setex(cache_key, ttl, payload)
-                logger.info("Cache set for key %s", cache_key)
+                logger.debug("Cache set for key %s", cache_key)
             except (TypeError, ValueError):
                 logger.debug("Result not JSON-serializable; skipping cache for key %s", cache_key)
                 logger.warning("Cache failed for key %s due to serialization error", cache_key)
