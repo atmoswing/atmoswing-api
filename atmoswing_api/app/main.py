@@ -12,6 +12,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 import traceback
+import os
 
 app = FastAPI(
     title="AtmoSwing Web Forecast API",
@@ -65,3 +66,13 @@ async def global_exception_handler(request: Request, exc: Exception):
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     logger.warning(f"Rate limit exceeded: {exc}")
     return JSONResponse(status_code=429, content={"detail": "Rate limit exceeded. Please try again later."})
+
+# FastAPI startup: check Redis availability and log status so you can see cache usage info in logs
+@app.on_event("startup")
+async def check_redis_on_startup():
+    try:
+        from atmoswing_api import cache
+        await cache.redis_client.ping()
+        logger.info("Redis reachable at %s:%s; caching enabled", os.getenv("REDIS_HOST", "localhost"), os.getenv("REDIS_PORT", 6379))
+    except Exception as e:
+        logger.warning("Redis unreachable; caching will be bypassed until Redis is available: %s", e)
