@@ -56,7 +56,7 @@ def redis_cache(ttl=3600):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             global redis_available, _redis_retry_at
-            logger.debug("Entering cache wrapper for %s", func.__name__)
+            logger.info("Entering cache wrapper for %s", func.__name__)
 
             # If Redis is currently marked unavailable, check whether it's time to retry.
             now = time.time()
