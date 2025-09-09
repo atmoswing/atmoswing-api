@@ -6,6 +6,9 @@ from atmoswing_api import config
 from atmoswing_api.cache import *
 from atmoswing_api.app.models.models import *
 from atmoswing_api.app.services.aggregations import *
+from atmoswing_api.app.utils.utils import compute_cache_hash, make_cache_paths
+import json
+from pathlib import Path
 
 router = APIRouter()
 debug = False
@@ -14,6 +17,24 @@ debug = False
 @lru_cache
 def get_settings():
     return config.Settings()
+
+
+# Helper function to check for a prebuilt JSON and return it if present
+def load_prebuilt_result(settings: config.Settings, func_name: str, region: str, forecast_date: str, percentile: int, normalize: int):
+    prebuilt_dir = Path(settings.data_dir) / '.prebuilt_cache'
+    if not prebuilt_dir.exists():
+        return None
+    hash_suffix = compute_cache_hash(func_name, region, forecast_date, percentile, normalize)
+    cache_path = make_cache_paths(prebuilt_dir, func_name, region, forecast_date, hash_suffix)
+    candidates = sorted(prebuilt_dir.glob(cache_path), key=lambda p: p.stat().st_mtime, reverse=True)
+    if not candidates:
+        return None
+    try:
+        data = json.loads(candidates[0].read_text(encoding='utf-8'))
+        return data.get('result')
+    except Exception as e:
+        logging.warning(f"Failed to read prebuilt cache {candidates[0]}: {e}")
+        return None
 
 
 # Helper function to handle requests and catch exceptions
@@ -75,6 +96,9 @@ async def series_synthesis_per_method(
     """
     Get the largest analog values for a given region, forecast_date, and percentile.
     """
+    prebuilt = load_prebuilt_result(settings, 'series_synthesis_per_method', region, forecast_date, percentile, normalize)
+    if prebuilt is not None:
+        return prebuilt
     return await _handle_request(get_series_synthesis_per_method, settings,
                                  region, forecast_date=forecast_date,
                                  percentile=percentile, normalize=normalize)
@@ -95,6 +119,9 @@ async def series_synthesis_total(
     """
     Get the largest analog values for a given region, forecast_date, and percentile.
     """
+    prebuilt = load_prebuilt_result(settings, 'series_synthesis_total', region, forecast_date, percentile, normalize)
+    if prebuilt is not None:
+        return prebuilt
     return await _handle_request(get_series_synthesis_total, settings,
                                  region, forecast_date=forecast_date,
                                  percentile=percentile, normalize=normalize)
