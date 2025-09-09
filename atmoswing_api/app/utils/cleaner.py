@@ -1,8 +1,10 @@
 # Script to remove the forecasts older than X days
+
 import os
 import shutil
 import datetime
 import argparse
+
 
 parser = argparse.ArgumentParser(description="Remove forecasts older than X days.")
 parser.add_argument("--data-dir", default="/app/data", help="Path to the data directory")

@@ -1,6 +1,7 @@
 import re
 import os
 import glob
+import hashlib
 import xarray
 import numpy as np
 from pathlib import Path
@@ -468,3 +469,58 @@ def sanitize_unicode_surrogates(obj):
         return surrogate_pattern.sub('', obj)
     else:
         return obj
+
+
+def compute_cache_hash(func_name: str, region: str, forecast_date: str, percentile: int, normalize: int) -> str:
+    """
+    Compute a hash suffix for caching based on the function name, region, forecast date,
+    percentile, and normalization factor.
+
+    Parameters
+    ----------
+    func_name: str
+        The name of the function for which the cache is being computed.
+    region: str
+        The region identifier.
+    forecast_date: str
+        The forecast date in string format.
+    percentile: int
+        The percentile value.
+    normalize: int
+        The normalization factor.
+
+    Returns
+    -------
+    str
+        A 12-character hash suffix for caching.
+    """
+    payload = f"{func_name}:{region}:{forecast_date}:{percentile}:{normalize}"
+    return hashlib.sha256(payload.encode()).hexdigest()[:12]
+
+
+def make_cache_paths(prebuilt_dir: Path, func_name: str, region: str, forecast_date: str, hash_suffix: str) -> Path:
+    """
+    Create a cache file path based on the function name, region, forecast date,
+    and hash suffix.
+
+    Parameters
+    ----------
+    prebuilt_dir: Path
+        The directory where prebuilt cache files are stored.
+    func_name: str
+        The name of the function for which the cache is being created.
+    region: str
+        The region identifier.
+    forecast_date: str
+        The forecast date in string format.
+    hash_suffix: str
+        The hash suffix for the cache file.
+
+    Returns
+    -------
+    Path
+        The full path to the cache file.
+    """
+    safe_forecast = forecast_date.replace(':', '-')
+    filename = f"{func_name}_{region}_{safe_forecast}_{hash_suffix}.json"
+    return prebuilt_dir / filename
