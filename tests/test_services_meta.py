@@ -284,6 +284,17 @@ async def test_get_method_configs_list():
 
 
 @pytest.mark.asyncio
+async def test_get_method_configs_list_with_accents():
+    result = await get_method_configs_list(data_dir, "zap", "2025-09-09")
+
+    assert result["methods"][0] == {
+        'configurations': [
+            {'id': 'Cevennes_Delta_Rhone_Ouest', 'name': 'Cévennes - Delta Rhône Ouest'}
+        ],
+        'id': '4Zo-ARPEGE', 'name': 'Analogie circulation (4Zo) ARPEGE'}
+
+
+@pytest.mark.asyncio
 @patch("atmoswing_api.app.utils.utils.check_region_path")
 @patch("atmoswing_api.app.utils.utils.get_file_path")
 @patch("xarray.open_dataset")

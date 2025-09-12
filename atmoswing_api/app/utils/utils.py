@@ -7,7 +7,6 @@ import numpy as np
 from pathlib import Path
 from datetime import datetime, date, timedelta
 
-
 def check_region_path(data_dir: str, region: str) -> str:
     """
     Check if the region path exists and is a symlink.
@@ -471,30 +470,46 @@ def sanitize_unicode_surrogates(obj):
         return obj
 
 
-def compute_cache_hash(func_name: str, region: str, forecast_date: str, percentile: int, normalize: int) -> str:
+def decode_surrogate_escaped_utf8(s: str) -> str:
+    """Repair strings where UTF-8 bytes were turned into low-surrogate code points
+    via the 'surrogateescape' error handler or similar mishandling, e.g.
+    'C\udcc3\udca9vennes' -> 'Cévennes'. We rebuild the original byte stream by
+    mapping each U+DC80..U+DCFF to its raw byte 0x80..0xFF, while encoding all
+    other characters as UTF-8 bytes, then decode once as UTF-8.
+    If decoding fails, return the original string.
     """
-    Compute a hash suffix for caching based on the function name, region, forecast date,
-    percentile, and normalization factor.
+    if not isinstance(s, str):
+        return s
+    if not any('\udc80' <= ch <= '\udcff' for ch in s):  # fast path
+        return s
+    b = bytearray()
+    for ch in s:
+        code = ord(ch)
+        if 0xDC80 <= code <= 0xDCFF:  # surrogateescape preserved byte
+            b.append(code - 0xDC00)
+        else:
+            b.extend(ch.encode('utf-8'))
+    try:
+        return b.decode('utf-8')
+    except UnicodeDecodeError:
+        return s
 
-    Parameters
-    ----------
-    func_name: str
-        The name of the function for which the cache is being computed.
-    region: str
-        The region identifier.
-    forecast_date: str
-        The forecast date in string format.
-    percentile: int
-        The percentile value.
-    normalize: int
-        The normalization factor.
 
-    Returns
-    -------
-    str
-        A 12-character hash suffix for caching.
+def compute_cache_hash(func_name: str, region: str, forecast_date: str, percentile: int | None = None, normalize: int | None = None, **extra) -> str:
     """
-    payload = f"{func_name}:{region}:{forecast_date}:{percentile}:{normalize}"
+    Compute a hash suffix for caching based on core parameters and any additional
+    keyword arguments. Backwards compatible with previous signature
+    (func_name, region, forecast_date, percentile, normalize).
+    Additional uniqueness (e.g. method, lead_time) can be added via **extra.
+    """
+    parts = [str(func_name), str(region), str(forecast_date)]
+    if percentile is not None:
+        parts.append(str(percentile))
+    if normalize is not None:
+        parts.append(str(normalize))
+    for k in sorted(extra.keys()):
+        parts.append(f"{k}={extra[k]}")
+    payload = ":".join(parts)
     return hashlib.sha256(payload.encode()).hexdigest()[:12]
 
 
