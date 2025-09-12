@@ -471,30 +471,21 @@ def sanitize_unicode_surrogates(obj):
         return obj
 
 
-def compute_cache_hash(func_name: str, region: str, forecast_date: str, percentile: int, normalize: int) -> str:
+def compute_cache_hash(func_name: str, region: str, forecast_date: str, percentile: int | None = None, normalize: int | None = None, **extra) -> str:
     """
-    Compute a hash suffix for caching based on the function name, region, forecast date,
-    percentile, and normalization factor.
-
-    Parameters
-    ----------
-    func_name: str
-        The name of the function for which the cache is being computed.
-    region: str
-        The region identifier.
-    forecast_date: str
-        The forecast date in string format.
-    percentile: int
-        The percentile value.
-    normalize: int
-        The normalization factor.
-
-    Returns
-    -------
-    str
-        A 12-character hash suffix for caching.
+    Compute a hash suffix for caching based on core parameters and any additional
+    keyword arguments. Backwards compatible with previous signature
+    (func_name, region, forecast_date, percentile, normalize).
+    Additional uniqueness (e.g. method, lead_time) can be added via **extra.
     """
-    payload = f"{func_name}:{region}:{forecast_date}:{percentile}:{normalize}"
+    parts = [str(func_name), str(region), str(forecast_date)]
+    if percentile is not None:
+        parts.append(str(percentile))
+    if normalize is not None:
+        parts.append(str(normalize))
+    for k in sorted(extra.keys()):
+        parts.append(f"{k}={extra[k]}")
+    payload = ":".join(parts)
     return hashlib.sha256(payload.encode()).hexdigest()[:12]
 
 

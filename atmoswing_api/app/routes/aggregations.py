@@ -20,11 +20,11 @@ def get_settings():
 
 
 # Helper function to check for a prebuilt JSON and return it if present
-def load_prebuilt_result(settings: config.Settings, func_name: str, region: str, forecast_date: str, percentile: int, normalize: int):
+def load_prebuilt_result(settings: config.Settings, func_name: str, region: str, forecast_date: str, percentile: int | None = None, normalize: int | None = None, **extra):
     prebuilt_dir = Path(settings.data_dir) / '.prebuilt_cache'
     if not prebuilt_dir.exists():
         return None
-    hash_suffix = compute_cache_hash(func_name, region, forecast_date, percentile, normalize)
+    hash_suffix = compute_cache_hash(func_name, region, forecast_date, percentile, normalize, **extra)
     cache_path = make_cache_paths(prebuilt_dir, func_name, region, forecast_date, hash_suffix)
     pattern = cache_path.name
     candidates = sorted(prebuilt_dir.glob(pattern), key=lambda p: p.stat().st_mtime, reverse=True)
@@ -75,6 +75,9 @@ async def entities_analog_values_percentile(
     """
     Get the analog dates for a given region, forecast_date, method, configuration, and lead_time.
     """
+    prebuilt = load_prebuilt_result(settings, 'entities_analog_values_percentile', region, forecast_date, percentile, normalize, method=method, lead_time=lead_time)
+    if prebuilt is not None:
+        return prebuilt
     return await _handle_request(get_entities_analog_values_percentile, settings,
                                  region, forecast_date=forecast_date, method=method,
                                  lead_time=lead_time, percentile=percentile,
