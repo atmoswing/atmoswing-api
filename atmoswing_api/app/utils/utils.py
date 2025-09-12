@@ -7,7 +7,6 @@ import numpy as np
 from pathlib import Path
 from datetime import datetime, date, timedelta
 
-
 def check_region_path(data_dir: str, region: str) -> str:
     """
     Check if the region path exists and is a symlink.
@@ -469,6 +468,31 @@ def sanitize_unicode_surrogates(obj):
         return surrogate_pattern.sub('', obj)
     else:
         return obj
+
+
+def decode_surrogate_escaped_utf8(s: str) -> str:
+    """Repair strings where UTF-8 bytes were turned into low-surrogate code points
+    via the 'surrogateescape' error handler or similar mishandling, e.g.
+    'C\udcc3\udca9vennes' -> 'Cévennes'. We rebuild the original byte stream by
+    mapping each U+DC80..U+DCFF to its raw byte 0x80..0xFF, while encoding all
+    other characters as UTF-8 bytes, then decode once as UTF-8.
+    If decoding fails, return the original string.
+    """
+    if not isinstance(s, str):
+        return s
+    if not any('\udc80' <= ch <= '\udcff' for ch in s):  # fast path
+        return s
+    b = bytearray()
+    for ch in s:
+        code = ord(ch)
+        if 0xDC80 <= code <= 0xDCFF:  # surrogateescape preserved byte
+            b.append(code - 0xDC00)
+        else:
+            b.extend(ch.encode('utf-8'))
+    try:
+        return b.decode('utf-8')
+    except UnicodeDecodeError:
+        return s
 
 
 def compute_cache_hash(func_name: str, region: str, forecast_date: str, percentile: int | None = None, normalize: int | None = None, **extra) -> str:

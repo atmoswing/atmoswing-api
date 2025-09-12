@@ -107,7 +107,7 @@ def _get_methods_from_netcdf(data_dir: str, region: str, forecast_date: str):
     for file in files:
         with xr.open_dataset(file, engine="h5netcdf") as ds:
             method_id = ds.method_id
-            method_name = ds.method_id_display
+            method_name = utils.decode_surrogate_escaped_utf8(ds.method_id_display)
             if not any(method['id'] == method_id for method in methods):
                 methods.append({"id": method_id, "name": method_name})
 
@@ -141,9 +141,9 @@ def _get_method_configs_from_netcdf(data_dir: str, region: str, forecast_date: s
     for file in files:
         with xr.open_dataset(file, engine="h5netcdf") as ds:
             method_id = ds.method_id
-            method_name = ds.method_id_display
+            method_name = utils.decode_surrogate_escaped_utf8(ds.method_id_display)
             config_id = ds.specific_tag
-            config_name = ds.specific_tag_display
+            config_name = utils.decode_surrogate_escaped_utf8(ds.specific_tag_display)
             for method in method_configs:
                 if method['id'] == method_id:
                     method['configurations'].append(
@@ -192,7 +192,7 @@ def _get_entities_from_netcdf(data_dir: str, region: str, forecast_date: str, me
         for i in range(len(station_ids)):
             entity = {
                 "id": int(station_ids[i]),
-                "name": str(station_names[i]),
+                "name": utils.decode_surrogate_escaped_utf8(str(station_names[i])),
                 "x": float(station_x_coords[i]),
                 "y": float(station_y_coords[i])
             }
@@ -243,7 +243,7 @@ def _get_relevant_entities_from_netcdf(data_dir: str, region: str, forecast_date
         for i in relevant_idx:
             entity = {
                 "id": int(station_ids[i]),
-                "name": str(station_names[i]),
+                "name": utils.decode_surrogate_escaped_utf8(str(station_names[i])),
                 "x": float(station_x_coords[i]),
                 "y": float(station_y_coords[i])
             }
