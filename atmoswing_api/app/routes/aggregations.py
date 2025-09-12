@@ -26,7 +26,8 @@ def load_prebuilt_result(settings: config.Settings, func_name: str, region: str,
         return None
     hash_suffix = compute_cache_hash(func_name, region, forecast_date, percentile, normalize)
     cache_path = make_cache_paths(prebuilt_dir, func_name, region, forecast_date, hash_suffix)
-    candidates = sorted(prebuilt_dir.glob(cache_path), key=lambda p: p.stat().st_mtime, reverse=True)
+    pattern = cache_path.name
+    candidates = sorted(prebuilt_dir.glob(pattern), key=lambda p: p.stat().st_mtime, reverse=True)
     if not candidates:
         return None
     try:
