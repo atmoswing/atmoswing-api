@@ -214,7 +214,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Warm up prebuilt JSON caches for heavy endpoints")
     parser.add_argument("--data-dir", default="/app/data", help="Path to data directory")
     parser.add_argument("--days", type=int, default=10, help="Look back N days")
-    parser.add_argument("--functions", nargs='+', default=['series_synthesis_per_method','series_synthesis_total'], help="Functions to warm (add: list_methods list_methods_and_configs entities_analog_values_percentile)")
+    parser.add_argument("--functions", nargs='+', default=['series_synthesis_per_method','series_synthesis_total','list_methods','list_methods_and_configs','entities_analog_values_percentile'], help="Functions to warm up")
     parser.add_argument("--regions", nargs='*', help="Subset of regions")
     parser.add_argument("--percentile", type=int, default=90, help="Percentile (for percentile-based funcs)")
     parser.add_argument("--normalize", type=int, default=10, help="Normalization reference")
