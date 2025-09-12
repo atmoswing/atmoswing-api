@@ -10,14 +10,13 @@ import argparse
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
 
-from atmoswing_api import config
 from atmoswing_api.app.services import aggregations as svc
 from atmoswing_api.app.utils.utils import compute_cache_hash, make_cache_paths
 
 
-def resolve_data_dir(settings: config.Settings) -> Path:
+def resolve_data_dir(data_dir: str) -> Path:
     # If data_dir is relative, resolve it against the repository root so './data' works
-    base = Path(settings.data_dir)
+    base = Path(data_dir)
     if not base.is_absolute():
         repo_root = Path(__file__).resolve().parents[3]
         base = (repo_root / base).resolve()
@@ -104,14 +103,14 @@ def latest_source_mtime_for_forecast(region_path: Path, forecast_date: str) -> f
     return latest
 
 
-def generate_if_needed(settings: config.Settings, func_name: str, region: str, forecast_date: str, percentile: int, normalize: int, prebuilt_dir: Path, dry_run: bool = False):
+def generate_if_needed(data_dir: str, func_name: str, region: str, forecast_date: str, percentile: int, normalize: int, prebuilt_dir: Path, dry_run: bool = False):
     prebuilt_dir.mkdir(parents=True, exist_ok=True)
     hash_suffix = compute_cache_hash(func_name, region, forecast_date, percentile, normalize)
     cache_path = make_cache_paths(prebuilt_dir, func_name, region, forecast_date, hash_suffix)
     lock_path = cache_path.with_suffix(cache_path.suffix + ".lock")
 
     # Determine latest source mtime
-    region_path = Path(resolve_data_dir(settings)) / region
+    region_path = Path(resolve_data_dir(data_dir)) / region
     if not region_path.exists():
         print(f"Skipping region {region}: not found")
         return
@@ -137,7 +136,7 @@ def generate_if_needed(settings: config.Settings, func_name: str, region: str, f
 
     try:
         # Call the appropriate synchronous service function
-        data_dir = resolve_data_dir(settings)
+        data_dir = resolve_data_dir(data_dir)
         if func_name == 'series_synthesis_per_method':
             result = svc._get_series_synthesis_per_method(data_dir, region, forecast_date, percentile, normalize)
         elif func_name == 'series_synthesis_total':
@@ -162,6 +161,7 @@ def generate_if_needed(settings: config.Settings, func_name: str, region: str, f
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Warm up prebuilt JSON caches for heavy aggregation endpoints")
+    parser.add_argument("--data-dir", default="/app/data", help="Path to the data directory")
     parser.add_argument("--days", type=int, default=20, help="Look back this many days (default: 20)")
     parser.add_argument("--functions", nargs='+', default=['series_synthesis_per_method', 'series_synthesis_total'], help="Functions to warm")
     parser.add_argument("--regions", nargs='*', help="Limit to specific regions (optional)")
@@ -170,11 +170,10 @@ def main(argv=None):
     parser.add_argument("--dry-run", action='store_true', help="Don't write files, just show what would be done")
     args = parser.parse_args(argv)
 
-    settings = config.Settings()
-    prebuilt_dir = Path(resolve_data_dir(settings)) / '.prebuilt_cache'
+    prebuilt_dir = Path(resolve_data_dir(args.data_dir)) / '.prebuilt_cache'
 
     # Iterate regions
-    base = Path(resolve_data_dir(settings))
+    base = Path(resolve_data_dir(args.data_dir))
     regions = [p.name for p in base.iterdir() if p.is_dir()]
     if args.regions:
         regions = [r for r in regions if r in args.regions]
@@ -190,7 +189,7 @@ def main(argv=None):
             continue
         for fd in sorted(forecast_dates):
             for func_name in args.functions:
-                generate_if_needed(settings, func_name, region, fd, args.percentile, args.normalize, prebuilt_dir, dry_run=args.dry_run)
+                generate_if_needed(args.data_dir, func_name, region, fd, args.percentile, args.normalize, prebuilt_dir, dry_run=args.dry_run)
 
 
 if __name__ == '__main__':
