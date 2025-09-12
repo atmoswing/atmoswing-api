@@ -219,7 +219,7 @@ def main(argv=None):
     parser.add_argument("--percentile", type=int, default=90, help="Percentile (for percentile-based funcs)")
     parser.add_argument("--normalize", type=int, default=10, help="Normalization reference")
     parser.add_argument("--methods", nargs='*', help="Limit methods for entities_analog_values_percentile")
-    parser.add_argument("--lead-times", default="0,24,48,72", help="Comma list of lead times for entities_analog_values_percentile")
+    parser.add_argument("--lead-times", default="0,24,48", help="Comma list of lead times for entities_analog_values_percentile")
     parser.add_argument("--dry-run", action='store_true', help="Only show actions")
     args = parser.parse_args(argv)
 
