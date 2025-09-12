@@ -10,9 +10,9 @@ import argparse
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
 
-from .. import config
-from ..app.services import aggregations as svc
-from ..app.utils.utils import compute_cache_hash, make_cache_paths
+from atmoswing_api import config
+from atmoswing_api.app.services import aggregations as svc
+from atmoswing_api.app.utils.utils import compute_cache_hash, make_cache_paths
 
 
 def resolve_data_dir(settings: config.Settings) -> Path:
