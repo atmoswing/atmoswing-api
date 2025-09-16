@@ -19,6 +19,14 @@ async def get_last_forecast_date(data_dir: str, region: str):
     return await asyncio.to_thread(_get_last_forecast_date, data_dir, region)
 
 
+async def has_forecast_date(data_dir: str, region: str, forecast_date: str):
+    """
+    Check if forecasts are available for a given region and forecast date.
+    """
+    return await asyncio.to_thread(_has_forecast_date, data_dir, region,
+                                   forecast_date)
+
+
 async def get_method_list(data_dir: str, region: str, forecast_date: str):
     """
     Get the list of available method types for a given region.
@@ -85,6 +93,24 @@ def _get_last_forecast_date(data_dir: str, region: str):
             "region": region
         },
         "last_forecast_date": utils.get_last_forecast_date(data_dir, region)
+    }
+
+
+def _has_forecast_date(data_dir: str, region: str, forecast_date: str):
+    region_path = utils.check_region_path(data_dir, region)
+
+    # Synchronous function to get methods from the NetCDF file
+    if forecast_date == 'latest':
+        forecast_date = utils.get_last_forecast_date(data_dir, region)
+
+    files = utils.list_files(region_path, forecast_date)
+
+    return {
+        "parameters": {
+            "region": region,
+            "forecast_date": utils.convert_to_datetime(forecast_date),
+        },
+        "has_forecasts": len(files) > 0
     }
 
 
