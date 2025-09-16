@@ -87,7 +87,7 @@ async def list_methods(
     """
     Check if forecasts are available for a given region and forecast date.
     """
-    return await _handle_request(has_forecast_date, settings, region)
+    return await _handle_request(has_forecast_date, settings, region, forecast_date)
 
 
 @router.get("/{region}/{forecast_date}/methods",
