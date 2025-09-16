@@ -103,14 +103,18 @@ def _has_forecast_date(data_dir: str, region: str, forecast_date: str):
     if forecast_date == 'latest':
         forecast_date = utils.get_last_forecast_date(data_dir, region)
 
-    files = utils.list_files(region_path, forecast_date)
+    try:
+        files = utils.list_files(region_path, forecast_date)
+        has_forecasts = len(files) > 0
+    except FileNotFoundError:
+        has_forecasts = False
 
     return {
         "parameters": {
             "region": region,
             "forecast_date": utils.convert_to_datetime(forecast_date),
         },
-        "has_forecasts": len(files) > 0
+        "has_forecasts": has_forecasts
     }
 
 
