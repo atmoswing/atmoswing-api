@@ -8,7 +8,7 @@ from atmoswing_api import config
 from atmoswing_api.cache import *
 from atmoswing_api.app.services.meta import get_last_forecast_date, \
     get_method_list, get_method_configs_list, get_entities_list, get_config_data, \
-    get_relevant_entities_list
+    get_relevant_entities_list, has_forecast_date
 from atmoswing_api.app.models.models import *
 from atmoswing_api.app.utils.utils import sanitize_unicode_surrogates, compute_cache_hash, make_cache_paths
 import json
@@ -75,6 +75,19 @@ async def last_forecast_date(
     Get the last available forecast date for a given region.
     """
     return await _handle_request(get_last_forecast_date, settings, region)
+
+
+@router.get("/{region}/{forecast_date}/has-forecasts",
+            summary="Check if forecasts are available")
+@redis_cache(ttl=120)
+async def list_methods(
+        region: str,
+        forecast_date: str,
+        settings: Annotated[config.Settings, Depends(get_settings)]):
+    """
+    Check if forecasts are available for a given region and forecast date.
+    """
+    return await _handle_request(has_forecast_date, settings, region)
 
 
 @router.get("/{region}/{forecast_date}/methods",
