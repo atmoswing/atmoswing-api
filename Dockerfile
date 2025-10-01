@@ -1,4 +1,4 @@
-# atmoswing/atmoswing-api
+# atmoswing/web-api
 
 FROM python:3.12-slim
 
