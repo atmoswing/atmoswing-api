@@ -27,7 +27,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v4
       with:
-        images: atmoswing/atmoswing-api
+        images: atmoswing/web-api
 
     - name: Login to Docker Hub
       if: github.event_name != 'pull_request'
