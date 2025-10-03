@@ -80,7 +80,7 @@ async def last_forecast_date(
 @router.get("/{region}/{forecast_date}/has-forecasts",
             summary="Check if forecasts are available")
 @redis_cache(ttl=120)
-async def list_methods(
+async def has_forecasts(
         region: str,
         forecast_date: str,
         settings: Annotated[config.Settings, Depends(get_settings)]):
@@ -151,18 +151,18 @@ async def list_entities(
 
 
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/relevant-entities",
-            summary="List of available entities",
+            summary="List of relevant entities",
             response_model=EntitiesListResponse,
             response_model_exclude_none=True)
 @redis_cache(ttl=3600)
-async def list_entities(
+async def list_relevant_entities(
         region: str,
         forecast_date: str,
         method: str,
         configuration: str,
         settings: Annotated[config.Settings, Depends(get_settings)]):
     """
-    Get the list of available entities for a given region, forecast_date, method, and configuration.
+    Get the list of relevant entities for a given region, forecast_date, method, and configuration.
     """
     return await _handle_request(get_relevant_entities_list, settings, region,
                                  forecast_date=forecast_date, method=method,
