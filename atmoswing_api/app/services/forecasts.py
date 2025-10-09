@@ -493,6 +493,7 @@ def _get_series_analog_values_best(
         target_dates = [np.datetime64(date).astype('datetime64[s]').item() for date in
                         ds.target_dates.values]
         series_values = []
+        series_dates = []
         entity_idx = utils.get_entity_index(ds, entity)
         analogs_nb = ds.analogs_nb.values
         for idx in range(len(analogs_nb)):
@@ -500,7 +501,10 @@ def _get_series_analog_values_best(
             end_idx = start_idx + min(number, int(analogs_nb[idx]))
             values = ds.analog_values_raw[entity_idx, start_idx:end_idx].astype(
                 float).values.tolist()
+            dates = [date.astype('datetime64[s]').item() for date in
+                     ds.analog_dates.values[start_idx:end_idx]]
             series_values.append(values)
+            series_dates.append(dates)
 
     return {
         "parameters": {
@@ -512,6 +516,7 @@ def _get_series_analog_values_best(
             "number": number
         },
         "target_dates": target_dates,
+        "series_dates": series_dates,
         "series_values": series_values
     }
 
