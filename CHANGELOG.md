@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog(https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning(https://semver.org/spec/v2.0.0.html).
 
+## 1.0.5 - 2025-10-09
+
+### Added
+
+- Adding a rate limit to avoid crashing the app.
+- Adding normalization of the per-config forecasts.
+- Adding a json cache for heavy computations.
+- Adding a cache warmup script and a cleaner script.
+- Adding a method to check if forecasts are available for a certain date.
+- Returning the corresponding analog dates along the values.
+
+### Changed
+
+- Disable CORS headers for API responses. They were causing issues with some clients. Handling CORS should be done at a higher level (e.g., API Gateway, reverse proxy).
+- Returning no data when the forecast is out of range.
+- Improving Redis usage.
+- Refactors logging configuration into a utility.
+- Changing Docker image name to 'atmoswing/web-api'.
+
+### Fixed
+
+- Improving logging in case of exceptions.
+- Fixing an issue with parallel requests causing errors: switching to h5netcdf engine.
+- Fixing Redis cache issue due to decorator misusage.
+- Fixing issue with special characters.
+
+
 ## 1.0.4 - 2025-06-23
 
 ### Changed
