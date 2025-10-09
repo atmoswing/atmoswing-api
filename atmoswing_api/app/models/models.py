@@ -93,6 +93,7 @@ class ReferenceValuesResponse(BaseModel):
 class SeriesAnalogValuesResponse(BaseModel):
     parameters: Parameters
     target_dates: List[datetime]
+    series_dates: List[List[datetime]]
     series_values: List[List[Annotated[float, round_to(2)]]]
 
 
