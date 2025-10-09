@@ -23,10 +23,13 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+license = { file = "LICENSE" }
 
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-where = ["atmoswing_api"]
+# Search from project root and include the root package and all its subpackages
+where = ["."]
+include = ["atmoswing_api*"]
