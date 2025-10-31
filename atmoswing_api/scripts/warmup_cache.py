@@ -395,18 +395,25 @@ def main(argv=None):
                 continue
             for fd in sorted(forecast_dates, reverse=True):
                 for func_name in args.functions:
-                    generate_if_needed(
-                        args.data_dir,
-                        func_name,
-                        region,
-                        fd,
-                        args.percentile,
-                        args.normalize,
-                        prebuilt_dir,
-                        dry_run=args.dry_run,
-                        methods=args.methods,
-                        lead_times=lead_times
-                    )
+                    try:
+                        generate_if_needed(
+                            args.data_dir,
+                            func_name,
+                            region,
+                            fd,
+                            args.percentile,
+                            args.normalize,
+                            prebuilt_dir,
+                            dry_run=args.dry_run,
+                            methods=args.methods,
+                            lead_times=lead_times
+                        )
+                    except Exception as e:
+                        # Log error and continue with next function/forecast date/region
+                        print(f"Error processing region={region} forecast_date={fd} func={func_name}: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        continue
     finally:
         singleton.release()
 
