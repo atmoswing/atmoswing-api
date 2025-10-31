@@ -393,7 +393,7 @@ def main(argv=None):
             if not forecast_dates:
                 print(f"No recent forecasts for region {region}")
                 continue
-            for fd in sorted(forecast_dates):
+            for fd in sorted(forecast_dates, reverse=True):
                 for func_name in args.functions:
                     generate_if_needed(
                         args.data_dir,
