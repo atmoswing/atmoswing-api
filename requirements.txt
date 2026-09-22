@@ -2,6 +2,7 @@ fastapi
 uvicorn[standard]
 xarray
 h5netcdf
+h5py
 pydantic
 pydantic-settings
 python-dotenv
