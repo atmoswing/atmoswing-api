@@ -7,11 +7,40 @@ import numpy as np
 from pathlib import Path
 from datetime import datetime, date, timedelta
 
+def validate_path_component(name: str, label: str = "name") -> str:
+    """
+    Ensure that a user-provided value can safely be used as a single file or
+    directory name, so that it cannot escape the data directory.
+    Empty names, names starting with a dot (including '.' and '..', and hidden
+    directories such as '.prebuilt_cache') and names containing path separators
+    are rejected with a FileNotFoundError.
+
+    Parameters
+    ----------
+    name: str
+        The value to check.
+    label: str
+        A description of the value, used in the error message.
+
+    Returns
+    -------
+    str
+        The validated name.
+    """
+    if (not isinstance(name, str) or not name or name.startswith(".")
+            or any(c in name for c in ("/", "\\", "\0"))):
+        raise FileNotFoundError(f"Invalid {label}: {name!r}")
+
+    return name
+
+
 def check_region_path(data_dir: str, region: str) -> str:
     """
-    Check if the region path exists and is a symlink.
-    If it is a symlink, resolve it to the actual path.
-    If the path does not exist, raise a FileNotFoundError.
+    Check that the region is a valid directory name and that the region
+    directory exists in the data directory. Region directories can be symlinks
+    (e.g. to other mounted volumes); they are resolved to the actual path.
+    If the region is invalid or the directory does not exist (including broken
+    symlinks), raise a FileNotFoundError.
 
     Parameters
     ----------
@@ -25,19 +54,15 @@ def check_region_path(data_dir: str, region: str) -> str:
     str
         The resolved path to the region directory.
     """
+    validate_path_component(region, "region")
+
     region_path = Path(data_dir) / region
-    region_path = region_path.resolve(strict=False)
 
-    if region_path.is_symlink():
-        if not region_path.exists():
-            raise FileNotFoundError(f"Broken symlink: {region_path}")
-        else:
-            return str(region_path)
+    # is_dir() follows symlinks, so broken symlinks are also rejected
+    if not region_path.is_dir():
+        raise FileNotFoundError(f"Region not found: {region}")
 
-    if not region_path.exists():
-        raise FileNotFoundError(f"Region directory not found: {region_path}")
-
-    return str(region_path)
+    return str(region_path.resolve())
 
 
 def convert_to_date(date_str: str) -> date:
@@ -151,6 +176,9 @@ def get_files_pattern(region_path: str, datetime_str: str, method='*') -> str:
     str
         The file pattern to search for in the region directory.
     """
+    if method != '*':
+        method = glob.escape(validate_path_component(method, "method"))
+
     dt = convert_to_datetime(datetime_str)
     path = f"{region_path}/{dt.year:04d}/{dt.month:02d}/{dt.day:02d}"
     if not os.path.exists(path):
@@ -259,6 +287,9 @@ def get_file_path(
     str
         The full path to the file matching the given parameters.
     """
+    validate_path_component(method, "method")
+    validate_path_component(configuration, "configuration")
+
     dt = convert_to_datetime(datetime_str)
     path = f"{region_path}/{dt.year:04d}/{dt.month:02d}/{dt.day:02d}"
     if not os.path.exists(path):
