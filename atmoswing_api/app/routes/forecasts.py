@@ -1,21 +1,22 @@
-import logging
-from typing import List
-from functools import lru_cache
-from fastapi import APIRouter, HTTPException, Depends, Query
-from typing_extensions import Annotated
+from typing import Annotated, List
+from fastapi import APIRouter, Depends, Query
 
-from atmoswing_api import config
+from atmoswing_api.config import Settings, get_settings
+from atmoswing_api.cache import redis_cache
 from atmoswing_api.app.routes.common import handle_request, resolve_latest
-from atmoswing_api.cache import *
-from atmoswing_api.app.models.models import *
-from atmoswing_api.app.services.forecasts import *
+from atmoswing_api.app.models.models import (
+    AnalogCriteriaResponse, AnalogDatesResponse, AnalogValuesPercentilesResponse,
+    AnalogValuesResponse, AnalogsResponse, EntitiesValuesPercentileResponse,
+    ReferenceValuesResponse, SeriesAnalogValuesResponse,
+    SeriesValuesPercentilesHistoryResponse, SeriesValuesPercentilesResponse)
+from atmoswing_api.app.services.forecasts import (
+    get_analog_criteria, get_analog_dates, get_analog_values,
+    get_analog_values_best, get_analog_values_percentiles, get_analogs,
+    get_entities_analog_values_percentile, get_reference_values,
+    get_series_analog_values_best, get_series_analog_values_percentiles,
+    get_series_analog_values_percentiles_history)
 
 router = APIRouter()
-
-
-@lru_cache
-def get_settings():
-    return config.Settings()
 
 
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{lead_time}/analog-dates",
@@ -30,7 +31,7 @@ async def analog_dates(
         method: str,
         configuration: str,
         lead_time: int|str,
-        settings: Annotated[config.Settings, Depends(get_settings)]):
+        settings: Annotated[Settings, Depends(get_settings)]):
     """
     Get the analog dates for a given region, forecast date, method, configuration, and lead time.
     """
@@ -51,7 +52,7 @@ async def analog_criteria(
         method: str,
         configuration: str,
         lead_time: int|str,
-        settings: Annotated[config.Settings, Depends(get_settings)]):
+        settings: Annotated[Settings, Depends(get_settings)]):
     """
     Get the analog criteria for a given region, forecast date, method, configuration, and lead time.
     """
@@ -73,7 +74,7 @@ async def entities_analog_values_percentile(
         configuration: str,
         lead_time: int|str,
         percentile: int,
-        settings: Annotated[config.Settings, Depends(get_settings)],
+        settings: Annotated[Settings, Depends(get_settings)],
         normalize: int = Query(10)):
     """
     Get the precipitation values for a given region, forecast date, method, configuration, lead time, and percentile.
@@ -96,7 +97,7 @@ async def reference_values(
         method: str,
         configuration: str,
         entity: int,
-        settings: Annotated[config.Settings, Depends(get_settings)]):
+        settings: Annotated[Settings, Depends(get_settings)]):
     """
     Get the reference values for a given region, forecast date, method, configuration, and entity.
     """
@@ -117,7 +118,7 @@ async def series_analog_values_best(
         method: str,
         configuration: str,
         entity: int,
-        settings: Annotated[config.Settings, Depends(get_settings)],
+        settings: Annotated[Settings, Depends(get_settings)],
         number: int = 10):
     """
     Get the precipitation values for the best analogs and for a given region, forecast date, method, configuration, and entity.
@@ -140,7 +141,7 @@ async def series_analog_values_percentiles(
         method: str,
         configuration: str,
         entity: int,
-        settings: Annotated[config.Settings, Depends(get_settings)],
+        settings: Annotated[Settings, Depends(get_settings)],
         percentiles: List[int] = Query([20, 60, 90])):
     """
     Get the precipitation values for the provided percentiles and for a given region, forecast date, method, configuration, and entity.
@@ -163,7 +164,7 @@ async def series_analog_values_percentiles_history(
         method: str,
         configuration: str,
         entity: int,
-        settings: Annotated[config.Settings, Depends(get_settings)],
+        settings: Annotated[Settings, Depends(get_settings)],
         percentiles: List[int] = Query([20, 60, 90]),
         number: int = 5):
     """
@@ -188,7 +189,7 @@ async def analogs(
         configuration: str,
         entity: int,
         lead_time: int|str,
-        settings: Annotated[config.Settings, Depends(get_settings)]):
+        settings: Annotated[Settings, Depends(get_settings)]):
     """
     Get the analogs for a given region, forecast date, method, configuration, entity, and lead time.
     """
@@ -211,7 +212,7 @@ async def analog_values(
         configuration: str,
         entity: int,
         lead_time: int|str,
-        settings: Annotated[config.Settings, Depends(get_settings)]):
+        settings: Annotated[Settings, Depends(get_settings)]):
     """
     Get the precipitation values for a given region, forecast date, method, configuration, entity, lead time.
     """
@@ -234,7 +235,7 @@ async def analog_values_percentiles(
         configuration: str,
         entity: int,
         lead_time: int|str,
-        settings: Annotated[config.Settings, Depends(get_settings)],
+        settings: Annotated[Settings, Depends(get_settings)],
         percentiles: List[int] = Query([20, 60, 90])):
     """
     Get the precipitation values for a given region, forecast date, method, configuration, entity, lead time, and percentile.
@@ -258,7 +259,7 @@ async def analog_values_best(
         configuration: str,
         entity: int,
         lead_time: int|str,
-        settings: Annotated[config.Settings, Depends(get_settings)],
+        settings: Annotated[Settings, Depends(get_settings)],
         number: int = 10):
     """
     Get the precipitation values for the best analogs and for a given region, forecast date, method, configuration, entity, and lead time.

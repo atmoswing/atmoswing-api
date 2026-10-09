@@ -1,9 +1,7 @@
 import os
 import pytest
 from fastapi.testclient import TestClient
-from atmoswing_api import config
 from atmoswing_api.app.main import app
-from atmoswing_api.app.routes import meta, forecasts, aggregations
 from atmoswing_api.app.utils.errors import InvalidInputError, DataNotFoundError
 from atmoswing_api.app.utils.utils import (validate_path_component, check_region_path,
                                            get_file_path, get_files_pattern)
@@ -68,12 +66,6 @@ def test_get_files_pattern_invalid_method():
     "/aggregations/%2E%2E/2024-10-05T00/series-synthesis-total/90",
 ])
 def test_routes_reject_path_traversal(url):
-    def get_settings():
-        return config.Settings(data_dir=DATA_DIR)
-
-    for module in (meta, forecasts, aggregations):
-        app.dependency_overrides[module.get_settings] = get_settings
-
     response = TestClient(app).get(url)
     assert response.status_code == 400
     assert DATA_DIR not in response.text

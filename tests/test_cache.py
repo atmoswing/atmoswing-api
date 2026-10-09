@@ -1,12 +1,9 @@
-import os
 import socket
 import pytest
 from fastapi.testclient import TestClient
-from atmoswing_api import cache, config
+from atmoswing_api import cache
 from atmoswing_api.app.main import app
-from atmoswing_api.app.routes import meta, forecasts, aggregations
-
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+from atmoswing_api.app.routes import forecasts
 
 
 class FailingClient:
@@ -103,28 +100,17 @@ def test_route_served_from_redis(restore_cache_state, monkeypatch):
     # loop of a previous test
     monkeypatch.setattr(cache, "redis_client", cache._create_client())
 
-    def get_settings():
-        return config.Settings(data_dir=DATA_DIR)
-
-    overrides = dict(app.dependency_overrides)
-    for module in (meta, forecasts, aggregations):
-        app.dependency_overrides[module.get_settings] = get_settings
-
     url = "/forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord/2024-10-07/analog-dates"
-    try:
-        # The context manager runs the lifespan and keeps a single event loop
-        with TestClient(app) as client:
-            expected = client.get(url)
-            assert expected.status_code == 200
+    # The context manager runs the lifespan and keeps a single event loop
+    with TestClient(app) as client:
+        expected = client.get(url)
+        assert expected.status_code == 200
 
-            async def failing_service(*args, **kwargs):
-                raise RuntimeError("The service should not be called")
+        async def failing_service(*args, **kwargs):
+            raise RuntimeError("The service should not be called")
 
-            # The response can only come from Redis now
-            monkeypatch.setattr(forecasts, "get_analog_dates", failing_service)
-            response = client.get(url)
-            assert response.status_code == 200
-            assert response.json() == expected.json()
-    finally:
-        app.dependency_overrides.clear()
-        app.dependency_overrides.update(overrides)
+        # The response can only come from Redis now
+        monkeypatch.setattr(forecasts, "get_analog_dates", failing_service)
+        response = client.get(url)
+        assert response.status_code == 200
+        assert response.json() == expected.json()

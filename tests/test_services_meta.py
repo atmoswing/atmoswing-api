@@ -185,7 +185,7 @@ def test_get_methods_from_netcdf_mock(mock_open_dataset, mock_check_region_path,
     result = _get_methods_from_netcdf("/mocked_path", "region", "2023-01-01")
 
     assert result["methods"] == [{"id": 1, "name": "Method A"}, {"id": 2, "name": "Method B"}]
-    mock_list_files.assert_called_once_with("/mocked_path/region", "2023-01-01")
+    mock_list_files.assert_called_once_with("/mocked_path/region", "2023-01-01", method="*")
     assert mock_open_dataset.call_count == 2
 
 
@@ -198,7 +198,7 @@ def test_get_methods_from_netcdf_no_files(mock_check_region_path, mock_list_file
     # Mock check_region_path to return a mocked path
     mock_check_region_path.return_value = "/mocked_path/region"
 
-    with pytest.raises(FileNotFoundError, match="No files found for date: 2023-01-01"):
+    with pytest.raises(FileNotFoundError, match="No forecast found for 2023-01-01"):
         _get_methods_from_netcdf("/mocked_path", "region","2023-01-01")
 
 
@@ -261,7 +261,7 @@ async def test_get_method_configs_list_mock(
 
     # Ensure the mocked methods were called with expected arguments
     mock_check_region_path.assert_called_once_with("/mocked_path", "region1")
-    mock_list_files.assert_called_once_with("/mocked_path/region1", "2023-01-01")
+    mock_list_files.assert_called_once_with("/mocked_path/region1", "2023-01-01", method="*")
     mock_open_dataset.assert_any_call("/mocked/file1.nc", engine="h5netcdf")
     mock_open_dataset.assert_any_call("/mocked/file2.nc", engine="h5netcdf")
 

@@ -1,5 +1,7 @@
 import re
 import os
+import json
+import logging
 import glob
 import hashlib
 import xarray
@@ -146,7 +148,7 @@ def convert_to_target_date(forecast_date, lead_time) -> datetime:
         try:
             target_date = convert_to_datetime(lead_time)
             return target_date
-        except Exception as e:
+        except Exception:
             try:
                 dt = int(lead_time)  # in hours
             except ValueError:
@@ -244,7 +246,7 @@ def get_last_forecast_date(data_dir: str, region: str) -> str:
     return last_forecast_date
 
 
-def list_files(region_path: str, datetime_str: str) -> list:
+def list_files(region_path: str, datetime_str: str, method: str = '*') -> list:
     """
     List all files in the region path for a given datetime string.
 
@@ -254,13 +256,15 @@ def list_files(region_path: str, datetime_str: str) -> list:
         The path to the region directory.
     datetime_str: str
         The datetime string in the format "YYYY-MM-DDTHH" or "YYYY-MM-DD".
+    method: str
+        The method to filter the files by. Default is '*', which matches all methods.
 
     Returns
     -------
     list
         A sorted list of file paths matching the pattern for the given datetime.
     """
-    full_pattern = get_files_pattern(region_path, datetime_str)
+    full_pattern = get_files_pattern(region_path, datetime_str, method)
 
     files = sorted(glob.glob(full_pattern))
 
@@ -303,6 +307,92 @@ def get_file_path(
     file_path = f"{path}/{dt.year:04d}-{dt.month:02d}-{dt.day:02d}_{dt.hour:02d}.{method}.{configuration}.nc"
 
     return file_path
+
+
+def get_forecast_file(
+        data_dir: str,
+        region: str,
+        forecast_date: str,
+        method: str,
+        configuration: str
+) -> tuple[str, str]:
+    """
+    Get the path to the forecast file of a given region, forecast date, method,
+    and configuration. The forecast date 'latest' is replaced by the last
+    available forecast date.
+
+    Parameters
+    ----------
+    data_dir: str
+        The base directory where the region directories are located.
+    region: str
+        The name of the region directory.
+    forecast_date: str
+        The forecast date in the format "YYYY-MM-DDTHH" or "YYYY-MM-DD", or 'latest'.
+    method: str
+        The method of the forecast.
+    configuration: str
+        The configuration of the forecast.
+
+    Returns
+    -------
+    forecast_date: str
+        The forecast date ('latest' being resolved).
+    file_path: str
+        The full path to the existing forecast file.
+    """
+    region_path = check_region_path(data_dir, region)
+
+    if forecast_date == 'latest':
+        forecast_date = get_last_forecast_date(data_dir, region)
+
+    file_path = get_file_path(region_path, forecast_date, method, configuration)
+    if not os.path.exists(file_path):
+        raise DataNotFoundError(f"No forecast found for {forecast_date}, method "
+                                f"{method} and configuration {configuration}")
+
+    return forecast_date, file_path
+
+
+def list_forecast_files(
+        data_dir: str,
+        region: str,
+        forecast_date: str,
+        method: str = '*'
+) -> tuple[str, list]:
+    """
+    List the forecast files of a given region and forecast date, optionally
+    restricted to a method. The forecast date 'latest' is replaced by the last
+    available forecast date.
+
+    Parameters
+    ----------
+    data_dir: str
+        The base directory where the region directories are located.
+    region: str
+        The name of the region directory.
+    forecast_date: str
+        The forecast date in the format "YYYY-MM-DDTHH" or "YYYY-MM-DD", or 'latest'.
+    method: str
+        The method to filter the files by. Default is '*', which matches all methods.
+
+    Returns
+    -------
+    forecast_date: str
+        The forecast date ('latest' being resolved).
+    files: list
+        A sorted, non-empty list of forecast file paths.
+    """
+    region_path = check_region_path(data_dir, region)
+
+    if forecast_date == 'latest':
+        forecast_date = get_last_forecast_date(data_dir, region)
+
+    files = list_files(region_path, forecast_date, method=method)
+    if not files:
+        raise DataNotFoundError(f"No forecast found for {forecast_date}")
+
+    return forecast_date, files
 
 
 def get_row_indices(
@@ -575,3 +665,30 @@ def make_cache_paths(prebuilt_dir: Path, func_name: str, region: str, forecast_d
     safe_forecast = forecast_date.replace(':', '-')
     filename = f"{func_name}_{region}_{safe_forecast}_{hash_suffix}.json"
     return prebuilt_dir / filename
+
+
+def load_prebuilt_result(data_dir: str, func_name: str, region: str, forecast_date: str,
+                         percentile: int | None = None, normalize: int | None = None,
+                         **extra):
+    """
+    Load a result prebuilt by the warmup script (scripts/warmup_cache.py), if any.
+    The arguments must match the ones used by the warmup script to compute the
+    cache hash.
+
+    Returns
+    -------
+    The prebuilt result, or None if there is no (readable) prebuilt file.
+    """
+    prebuilt_dir = Path(data_dir) / '.prebuilt_cache'
+    hash_suffix = compute_cache_hash(func_name, region, forecast_date, percentile,
+                                     normalize, **extra)
+    cache_path = make_cache_paths(prebuilt_dir, func_name, region, forecast_date,
+                                  hash_suffix)
+    if not cache_path.is_file():
+        return None
+    try:
+        data = json.loads(cache_path.read_text(encoding='utf-8'))
+        return data.get('result')
+    except Exception as e:
+        logging.warning(f"Failed to read prebuilt cache {cache_path}: {e}")
+        return None

@@ -1,51 +1,24 @@
-import logging
-from functools import lru_cache
-from fastapi import APIRouter, HTTPException, Depends
-from typing_extensions import Annotated
-from typing import List
+from typing import Annotated
+from fastapi import APIRouter, Depends
 
-from atmoswing_api import config
+from atmoswing_api.config import Settings, get_settings
+from atmoswing_api.cache import redis_cache
 from atmoswing_api.app.routes.common import handle_request, resolve_latest
-from atmoswing_api.cache import *
-from atmoswing_api.app.services.meta import get_last_forecast_date, \
-    get_method_list, get_method_configs_list, get_entities_list, get_config_data, \
-    get_relevant_entities_list, has_forecast_date
-from atmoswing_api.app.models.models import *
-from atmoswing_api.app.utils.utils import sanitize_unicode_surrogates, compute_cache_hash, make_cache_paths
-import json
-from pathlib import Path
+from atmoswing_api.app.models.models import (
+    EntitiesListResponse, MethodConfigsListResponse, MethodsListResponse)
+from atmoswing_api.app.services.meta import (
+    get_config_data, get_entities_list, get_last_forecast_date,
+    get_method_configs_list, get_method_list, get_relevant_entities_list,
+    has_forecast_date)
+from atmoswing_api.app.utils.utils import load_prebuilt_result, sanitize_unicode_surrogates
 
 router = APIRouter()
-
-
-@lru_cache
-def get_settings():
-    return config.Settings()
-
-
-# Helper to load prebuilt cache if available
-def load_prebuilt_result(settings: config.Settings, func_name: str, region: str, forecast_date: str):
-    prebuilt_dir = Path(settings.data_dir) / '.prebuilt_cache'
-    if not prebuilt_dir.exists():
-        return None
-    hash_suffix = compute_cache_hash(func_name, region, forecast_date)
-    cache_path = make_cache_paths(prebuilt_dir, func_name, region, forecast_date, hash_suffix)
-    pattern = cache_path.name
-    candidates = sorted(prebuilt_dir.glob(pattern), key=lambda p: p.stat().st_mtime, reverse=True)
-    if not candidates:
-        return None
-    try:
-        data = json.loads(candidates[0].read_text(encoding='utf-8'))
-        return data.get('result')
-    except Exception as e:
-        logging.warning(f"Failed to read prebuilt cache {candidates[0]}: {e}")
-        return None
 
 
 @router.get("/show-config",
             summary="Show config")
 async def show_config(
-        settings: Annotated[config.Settings, Depends(get_settings)]):
+        settings: Annotated[Settings, Depends(get_settings)]):
     """
     Show the current configuration settings.
     """
@@ -56,7 +29,7 @@ async def show_config(
             summary="Last available forecast date")
 async def last_forecast_date(
         region: str,
-        settings: Annotated[config.Settings, Depends(get_settings)]):
+        settings: Annotated[Settings, Depends(get_settings)]):
     """
     Get the last available forecast date for a given region.
     """
@@ -70,7 +43,7 @@ async def last_forecast_date(
 async def has_forecasts(
         region: str,
         forecast_date: str,
-        settings: Annotated[config.Settings, Depends(get_settings)]):
+        settings: Annotated[Settings, Depends(get_settings)]):
     """
     Check if forecasts are available for a given region and forecast date.
     """
@@ -87,11 +60,11 @@ async def has_forecasts(
 async def list_methods(
         region: str,
         forecast_date: str,
-        settings: Annotated[config.Settings, Depends(get_settings)]):
+        settings: Annotated[Settings, Depends(get_settings)]):
     """
     Get the list of available methods for a given region.
     """
-    prebuilt = load_prebuilt_result(settings, 'list_methods', region, forecast_date)
+    prebuilt = load_prebuilt_result(settings.data_dir, 'list_methods', region, forecast_date)
     if prebuilt is not None:
         return sanitize_unicode_surrogates(prebuilt)
     result = await handle_request(get_method_list, settings, region,
@@ -108,11 +81,11 @@ async def list_methods(
 async def list_methods_and_configs(
         region: str,
         forecast_date: str,
-        settings: Annotated[config.Settings, Depends(get_settings)]):
+        settings: Annotated[Settings, Depends(get_settings)]):
     """
     Get the list of available methods and configs for a given region.
     """
-    prebuilt = load_prebuilt_result(settings, 'list_methods_and_configs', region, forecast_date)
+    prebuilt = load_prebuilt_result(settings.data_dir, 'list_methods_and_configs', region, forecast_date)
     if prebuilt is not None:
         return sanitize_unicode_surrogates(prebuilt)
     result = await handle_request(get_method_configs_list, settings, region,
@@ -131,7 +104,7 @@ async def list_entities(
         forecast_date: str,
         method: str,
         configuration: str,
-        settings: Annotated[config.Settings, Depends(get_settings)]):
+        settings: Annotated[Settings, Depends(get_settings)]):
     """
     Get the list of available entities for a given region, forecast_date, method, and configuration.
     """
@@ -151,7 +124,7 @@ async def list_relevant_entities(
         forecast_date: str,
         method: str,
         configuration: str,
-        settings: Annotated[config.Settings, Depends(get_settings)]):
+        settings: Annotated[Settings, Depends(get_settings)]):
     """
     Get the list of relevant entities for a given region, forecast_date, method, and configuration.
     """

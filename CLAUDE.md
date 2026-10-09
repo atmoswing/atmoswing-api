@@ -24,13 +24,13 @@ API docs at `/docs`, `/redoc`, `/minidocs` (custom template `templates/api_doc.h
 
 **Layering:** `app/routes/*` (FastAPI routers, mounted under `/meta`, `/forecasts`, `/aggregations` in `app/main.py`) → `app/services/*` → `app/utils/utils.py` (file discovery, date/lead-time math, NetCDF indexing). Response schemas are in `app/models/models.py`.
 
-**Service pattern:** each service exposes an `async def get_x(data_dir, region, ...)` that just does `asyncio.to_thread(_get_x, ...)`; the synchronous `_get_x` does the blocking xarray/NetCDF work. Add new endpoints following this pair pattern. Every service accepts `forecast_date == "latest"`, resolved via `utils.get_last_forecast_date`.
+**Service pattern:** each service exposes an `async def get_x(data_dir, region, ...)` that just does `asyncio.to_thread(_get_x, ...)`; the synchronous `_get_x` does the blocking xarray/NetCDF work. Add new endpoints following this pair pattern. Every service accepts `forecast_date == "latest"`. Services locate their input with `utils.get_forecast_file` (one method/configuration file) or `utils.list_forecast_files` (all files of a date), which validate the region, resolve `latest` and raise `DataNotFoundError`.
 
-**Route pattern:** routes inject `config.Settings` through an `lru_cache`d `get_settings` dependency and call services through a `_handle_request` helper that maps `FileNotFoundError` → HTTP 400 and other errors → 500. Routes are decorated `@router.get` → `@resolve_latest` → `@redis_cache(ttl=...)`, in that order. `resolve_latest` (`routes/common.py`) turns `forecast_date` into its canonical `YYYY-MM-DDTHH` form and resolves `latest` (reused for 10 s), so the Redis and prebuilt caches never key on `latest`. `redis_cache` (`atmoswing_api/cache.py`) keys on function name + args and backs off for 5 s whenever Redis errors.
+**Route pattern:** routes inject `Settings` through the shared `config.get_settings` dependency and call services through `routes/common.py::handle_request`, which maps `InvalidInputError`/`DataNotFoundError` (`app/utils/errors.py`, messages shown to clients, so no server paths) → HTTP 400 and any other error → generic 500. Routes are decorated `@router.get` → `@resolve_latest` → `@redis_cache(ttl=...)`, in that order. `resolve_latest` (`routes/common.py`) turns `forecast_date` into its canonical `YYYY-MM-DDTHH` form and resolves `latest` (reused for 10 s), so the Redis and prebuilt caches never key on `latest`. `redis_cache` (`atmoswing_api/cache.py`) keys on function name + args and backs off for 5 s whenever Redis errors.
 
 **Data layout:** `{data_dir}/{region}/YYYY/MM/DD/YYYY-MM-DD_HH.<method>.<config>.nc` (region dirs may be symlinks; see `check_region_path`). `tests/data/` holds real sample forecasts for regions `adn` and `zap`.
 
-**Prebuilt cache (two-tier caching):** `scripts/warmup_cache.py` (run externally, e.g. cron) precomputes heavy aggregation/meta results into `{data_dir}/.prebuilt_cache/` as JSON, regenerating when source `.nc` mtimes are newer; it uses a cross-platform singleton file lock. `routes/aggregations.py::load_prebuilt_result` checks these files first before computing. Both sides must use `utils.compute_cache_hash` / `utils.make_cache_paths` with identical parameters, so keep them in sync when changing endpoint arguments.
+**Prebuilt cache (two-tier caching):** `scripts/warmup_cache.py` (run externally, e.g. cron) precomputes heavy aggregation/meta results into `{data_dir}/.prebuilt_cache/` as JSON, regenerating when source `.nc` mtimes are newer; it uses a cross-platform singleton file lock. Routes check these files first with `utils.load_prebuilt_result`. Both sides must use `utils.compute_cache_hash` / `utils.make_cache_paths` with identical parameters, so keep them in sync when changing endpoint arguments.
 
 **Other scripts:** `scripts/cleaner.py --data-dir ... --keep-days 60` deletes old forecasts; `scripts/export_docs.py` exports the API docs.
 
@@ -38,7 +38,7 @@ API docs at `/docs`, `/redoc`, `/minidocs` (custom template `templates/api_doc.h
 
 ## Testing
 
-Route tests use `TestClient` and override the routes' `get_settings` dependency (`app.dependency_overrides[...]`) to point `data_dir` at `tests/data`. Each router module has its own `get_settings`, so override the one from the module under test.
+An autouse fixture in `tests/conftest.py` overrides `config.get_settings` so routes use `tests/data`, and restores `app.dependency_overrides` after each test. Use the `use_data_dir` fixture to point routes at another directory (e.g. `tmp_path`). Tests needing Redis are skipped when it is unreachable; CI provides a Redis service.
 
 ## Release
 

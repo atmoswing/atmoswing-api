@@ -3,16 +3,9 @@ from functools import lru_cache
 from fastapi.testclient import TestClient
 from atmoswing_api import config
 from atmoswing_api.app.main import app
-from atmoswing_api.app.routes.meta import get_settings as original_get_settings
+from atmoswing_api.config import get_settings
 
 
-@lru_cache
-def get_settings():
-    cwd = os.path.dirname(os.path.abspath(__file__))
-    data_dir = os.path.join(cwd, "data")
-    return config.Settings(data_dir=data_dir)
-
-app.dependency_overrides[original_get_settings] = get_settings
 client = TestClient(app)
 
 
@@ -53,7 +46,7 @@ def test_exception_file_not_found():
         data_dir_wrong = os.path.join(cwd, "data_wrong")
         return config.Settings(data_dir=data_dir_wrong)
 
-    app.dependency_overrides[original_get_settings] = get_settings_wrong
+    app.dependency_overrides[get_settings] = get_settings_wrong
     client_wrong = TestClient(app)
 
     response = client_wrong.get("/meta/adn/2024-10-05T00/methods")

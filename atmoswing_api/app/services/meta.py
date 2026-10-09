@@ -3,7 +3,6 @@ import asyncio
 import os
 
 from atmoswing_api.app.utils import utils
-from atmoswing_api.app.utils.errors import DataNotFoundError
 
 
 async def get_config_data(data_dir: str):
@@ -120,17 +119,7 @@ def _has_forecast_date(data_dir: str, region: str, forecast_date: str):
 
 
 def _get_methods_from_netcdf(data_dir: str, region: str, forecast_date: str):
-    region_path = utils.check_region_path(data_dir, region)
-
-    # Synchronous function to get methods from the NetCDF file
-    if forecast_date == 'latest':
-        forecast_date = utils.get_last_forecast_date(data_dir, region)
-
-    files = utils.list_files(region_path, forecast_date)
-
-    # Check that the files exist
-    if not files:
-        raise DataNotFoundError(f"No files found for date: {forecast_date}")
+    forecast_date, files = utils.list_forecast_files(data_dir, region, forecast_date)
 
     methods = []
 
@@ -154,17 +143,7 @@ def _get_methods_from_netcdf(data_dir: str, region: str, forecast_date: str):
 
 
 def _get_method_configs_from_netcdf(data_dir: str, region: str, forecast_date: str):
-    region_path = utils.check_region_path(data_dir, region)
-
-    # Synchronous function to get method configurations from the NetCDF file
-    if forecast_date == 'latest':
-        forecast_date = utils.get_last_forecast_date(data_dir, region)
-
-    files = utils.list_files(region_path, forecast_date)
-
-    # Check that the files exist
-    if not files:
-        raise DataNotFoundError(f"No files found for date: {forecast_date}")
+    forecast_date, files = utils.list_forecast_files(data_dir, region, forecast_date)
 
     method_configs = []
 
@@ -199,16 +178,8 @@ def _get_method_configs_from_netcdf(data_dir: str, region: str, forecast_date: s
 
 def _get_entities_from_netcdf(data_dir: str, region: str, forecast_date: str, method: str,
                               configuration: str):
-    region_path = utils.check_region_path(data_dir, region)
-
-    # Synchronous function to get entities from the NetCDF file
-    if forecast_date == 'latest':
-        forecast_date = utils.get_last_forecast_date(data_dir, region)
-
-    file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
-    if not os.path.exists(file_path):
-        raise DataNotFoundError(f"No forecast found for {forecast_date}, method "
-                                f"{method} and configuration {configuration}")
+    forecast_date, file_path = utils.get_forecast_file(
+        data_dir, region, forecast_date, method, configuration)
 
     entities = []
 
@@ -250,16 +221,8 @@ def _get_relevant_entities_from_netcdf(data_dir: str, region: str, forecast_date
     """
     Get the list of relevant entities for a given region, forecast_date, method, and configuration.
     """
-    region_path = utils.check_region_path(data_dir, region)
-
-    # Synchronous function to get entities from the NetCDF file
-    if forecast_date == 'latest':
-        forecast_date = utils.get_last_forecast_date(data_dir, region)
-
-    file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
-    if not os.path.exists(file_path):
-        raise DataNotFoundError(f"No forecast found for {forecast_date}, method "
-                                f"{method} and configuration {configuration}")
+    forecast_date, file_path = utils.get_forecast_file(
+        data_dir, region, forecast_date, method, configuration)
 
     entities = []
 

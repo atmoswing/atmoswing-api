@@ -1,9 +1,8 @@
 import os
 import pytest
 from fastapi.testclient import TestClient
-from atmoswing_api import config
 from atmoswing_api.app.main import app
-from atmoswing_api.app.routes import meta, forecasts, aggregations
+from atmoswing_api.app.routes import forecasts
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 BASE = "/forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord"
@@ -11,12 +10,6 @@ BASE = "/forecasts/adn/2024-10-05T00/4Zo-CEP/Alpes_Nord"
 
 @pytest.fixture
 def client():
-    def get_settings():
-        return config.Settings(data_dir=DATA_DIR)
-
-    for module in (meta, forecasts, aggregations):
-        app.dependency_overrides[module.get_settings] = get_settings
-
     return TestClient(app)
 
 
