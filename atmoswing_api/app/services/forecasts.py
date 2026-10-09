@@ -5,6 +5,7 @@ import numpy as np
 import asyncio
 
 from atmoswing_api.app.utils import utils
+from atmoswing_api.app.utils.errors import InvalidInputError, DataNotFoundError
 
 
 async def get_reference_values(data_dir: str, region: str, forecast_date: str,
@@ -139,7 +140,8 @@ def _get_reference_values(data_dir: str, region: str, forecast_date: str, method
     region_path = utils.check_region_path(data_dir, region)
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+        raise DataNotFoundError(f"No forecast found for {forecast_date}, method "
+                                f"{method} and configuration {configuration}")
 
     with xr.open_dataset(file_path, engine="h5netcdf") as ds:
         entity_idx = utils.get_entity_index(ds, entity)
@@ -170,7 +172,8 @@ def _get_analogs(data_dir: str, region: str, forecast_date: str, method: str,
     region_path = utils.check_region_path(data_dir, region)
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+        raise DataNotFoundError(f"No forecast found for {forecast_date}, method "
+                                f"{method} and configuration {configuration}")
 
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
@@ -217,7 +220,8 @@ def _get_analog_dates(data_dir: str, region: str, forecast_date: str, method: st
     region_path = utils.check_region_path(data_dir, region)
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+        raise DataNotFoundError(f"No forecast found for {forecast_date}, method "
+                                f"{method} and configuration {configuration}")
 
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
@@ -254,7 +258,8 @@ def _get_analog_criteria(data_dir: str, region: str, forecast_date: str, method:
     region_path = utils.check_region_path(data_dir, region)
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+        raise DataNotFoundError(f"No forecast found for {forecast_date}, method "
+                                f"{method} and configuration {configuration}")
 
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
@@ -291,7 +296,8 @@ def _get_analog_values(data_dir: str, region: str, forecast_date: str, method: s
     region_path = utils.check_region_path(data_dir, region)
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+        raise DataNotFoundError(f"No forecast found for {forecast_date}, method "
+                                f"{method} and configuration {configuration}")
 
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
@@ -332,7 +338,8 @@ def _get_analog_values_percentiles(
     region_path = utils.check_region_path(data_dir, region)
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+        raise DataNotFoundError(f"No forecast found for {forecast_date}, method "
+                                f"{method} and configuration {configuration}")
 
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
@@ -381,7 +388,8 @@ def _get_analog_values_best(
     region_path = utils.check_region_path(data_dir, region)
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+        raise DataNotFoundError(f"No forecast found for {forecast_date}, method "
+                                f"{method} and configuration {configuration}")
 
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
@@ -424,7 +432,8 @@ def _get_entities_analog_values_percentile(
     region_path = utils.check_region_path(data_dir, region)
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+        raise DataNotFoundError(f"No forecast found for {forecast_date}, method "
+                                f"{method} and configuration {configuration}")
 
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
@@ -451,7 +460,7 @@ def _get_entities_analog_values_percentile(
             try:
                 ref_idx = axis.index(normalize)
             except ValueError:
-                raise ValueError(f"normalize must be in {axis}")
+                raise InvalidInputError(f"normalize must be in {axis}")
             ref_values = ds.reference_values[:, ref_idx].astype(float).values
 
             # Normalize the values
@@ -487,7 +496,8 @@ def _get_series_analog_values_best(
     region_path = utils.check_region_path(data_dir, region)
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+        raise DataNotFoundError(f"No forecast found for {forecast_date}, method "
+                                f"{method} and configuration {configuration}")
 
     with xr.open_dataset(file_path, engine="h5netcdf") as ds:
         target_dates = [np.datetime64(date).astype('datetime64[s]').item() for date in
@@ -534,7 +544,8 @@ def _get_series_analog_values_percentiles(
     region_path = utils.check_region_path(data_dir, region)
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+        raise DataNotFoundError(f"No forecast found for {forecast_date}, method "
+                                f"{method} and configuration {configuration}")
 
     with xr.open_dataset(file_path, engine="h5netcdf") as ds:
         entity_idx = utils.get_entity_index(ds, entity)

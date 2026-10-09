@@ -3,6 +3,7 @@ import asyncio
 import os
 
 from atmoswing_api.app.utils import utils
+from atmoswing_api.app.utils.errors import DataNotFoundError
 
 
 async def get_config_data(data_dir: str):
@@ -129,7 +130,7 @@ def _get_methods_from_netcdf(data_dir: str, region: str, forecast_date: str):
 
     # Check that the files exist
     if not files:
-        raise FileNotFoundError(f"No files found for date: {forecast_date}")
+        raise DataNotFoundError(f"No files found for date: {forecast_date}")
 
     methods = []
 
@@ -163,7 +164,7 @@ def _get_method_configs_from_netcdf(data_dir: str, region: str, forecast_date: s
 
     # Check that the files exist
     if not files:
-        raise FileNotFoundError(f"No files found for date: {forecast_date}")
+        raise DataNotFoundError(f"No files found for date: {forecast_date}")
 
     method_configs = []
 
@@ -206,7 +207,8 @@ def _get_entities_from_netcdf(data_dir: str, region: str, forecast_date: str, me
 
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+        raise DataNotFoundError(f"No forecast found for {forecast_date}, method "
+                                f"{method} and configuration {configuration}")
 
     entities = []
 
@@ -256,7 +258,8 @@ def _get_relevant_entities_from_netcdf(data_dir: str, region: str, forecast_date
 
     file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
     if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+        raise DataNotFoundError(f"No forecast found for {forecast_date}, method "
+                                f"{method} and configuration {configuration}")
 
     entities = []
 

@@ -7,13 +7,15 @@ import numpy as np
 from pathlib import Path
 from datetime import datetime, date, timedelta
 
+from atmoswing_api.app.utils.errors import InvalidInputError, DataNotFoundError
+
 def validate_path_component(name: str, label: str = "name") -> str:
     """
     Ensure that a user-provided value can safely be used as a single file or
     directory name, so that it cannot escape the data directory.
     Empty names, names starting with a dot (including '.' and '..', and hidden
     directories such as '.prebuilt_cache') and names containing path separators
-    are rejected with a FileNotFoundError.
+    are rejected with an InvalidInputError.
 
     Parameters
     ----------
@@ -29,7 +31,7 @@ def validate_path_component(name: str, label: str = "name") -> str:
     """
     if (not isinstance(name, str) or not name or name.startswith(".")
             or any(c in name for c in ("/", "\\", "\0"))):
-        raise FileNotFoundError(f"Invalid {label}: {name!r}")
+        raise InvalidInputError(f"Invalid {label}: {name!r}")
 
     return name
 
@@ -40,7 +42,7 @@ def check_region_path(data_dir: str, region: str) -> str:
     directory exists in the data directory. Region directories can be symlinks
     (e.g. to other mounted volumes); they are resolved to the actual path.
     If the region is invalid or the directory does not exist (including broken
-    symlinks), raise a FileNotFoundError.
+    symlinks), raise an InvalidInputError or a DataNotFoundError.
 
     Parameters
     ----------
@@ -60,7 +62,7 @@ def check_region_path(data_dir: str, region: str) -> str:
 
     # is_dir() follows symlinks, so broken symlinks are also rejected
     if not region_path.is_dir():
-        raise FileNotFoundError(f"Region not found: {region}")
+        raise DataNotFoundError(f"Region not found: {region}")
 
     return str(region_path.resolve())
 
@@ -86,7 +88,7 @@ def convert_to_date(date_str: str) -> date:
     try:
         return datetime.strptime(date_str, "%Y-%m-%d").date()
     except ValueError:
-        raise ValueError(f"Invalid date format ({date_str})")
+        raise InvalidInputError(f"Invalid date format ({date_str})")
 
 
 def convert_to_datetime(datetime_str: str) -> datetime:
@@ -145,7 +147,10 @@ def convert_to_target_date(forecast_date, lead_time) -> datetime:
             target_date = convert_to_datetime(lead_time)
             return target_date
         except Exception as e:
-            dt = int(lead_time)  # in hours
+            try:
+                dt = int(lead_time)  # in hours
+            except ValueError:
+                raise InvalidInputError(f"Invalid lead time format ({lead_time})")
             target_date = forecast_date + timedelta(hours=dt)
             return target_date
 
@@ -153,7 +158,7 @@ def convert_to_target_date(forecast_date, lead_time) -> datetime:
         target_date = forecast_date + timedelta(hours=lead_time)
         return target_date
 
-    raise ValueError(f"Invalid lead time format ({lead_time})")
+    raise InvalidInputError(f"Invalid lead time format ({lead_time})")
 
 
 def get_files_pattern(region_path: str, datetime_str: str, method='*') -> str:
@@ -182,7 +187,7 @@ def get_files_pattern(region_path: str, datetime_str: str, method='*') -> str:
     dt = convert_to_datetime(datetime_str)
     path = f"{region_path}/{dt.year:04d}/{dt.month:02d}/{dt.day:02d}"
     if not os.path.exists(path):
-        raise FileNotFoundError(f"Date directory not found: {path}")
+        raise DataNotFoundError(f"No forecast found for {dt:%Y-%m-%d}")
 
     file_pattern = f"{dt.year:04d}-{dt.month:02d}-{dt.day:02d}_{dt.hour:02d}.{method}.*.nc"
 
@@ -211,7 +216,7 @@ def get_last_forecast_date(data_dir: str, region: str) -> str:
     def get_latest_subdir(path):
         subdirs = sorted(os.listdir(path), reverse=True)
         if not subdirs:
-            raise ValueError(f"No subdirectories found in {path}")
+            raise DataNotFoundError(f"No forecast found for region {region}")
         return subdirs[0]
 
     # Get the latest year, month, and day
@@ -222,7 +227,7 @@ def get_last_forecast_date(data_dir: str, region: str) -> str:
     # Get the latest file
     files = sorted(os.listdir(f"{region_path}/{year}/{month}/{day}"), reverse=True)
     if not files:
-        raise ValueError(f"No files found in {region_path}/{year}/{month}/{day}")
+        raise DataNotFoundError(f"No forecast found for region {region}")
 
     # Extract the hour from the latest file
     last_file = files[0]
@@ -293,7 +298,7 @@ def get_file_path(
     dt = convert_to_datetime(datetime_str)
     path = f"{region_path}/{dt.year:04d}/{dt.month:02d}/{dt.day:02d}"
     if not os.path.exists(path):
-        raise FileNotFoundError(f"Date directory not found: {path}")
+        raise DataNotFoundError(f"No forecast found for {dt:%Y-%m-%d}")
 
     file_path = f"{path}/{dt.year:04d}-{dt.month:02d}-{dt.day:02d}_{dt.hour:02d}.{method}.{configuration}.nc"
 
@@ -429,7 +434,7 @@ def get_entity_index(ds: xarray.Dataset, entity: int | str) -> int:
     indices = np.where(station_ids == entity)[0]
     entity_idx = int(indices[0]) if indices.size > 0 else -1
     if entity_idx == -1:
-        raise ValueError(f"Entity not found: {entity}")
+        raise InvalidInputError(f"Entity not found: {entity}")
 
     return entity_idx
 

@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 from atmoswing_api import config
 from atmoswing_api.app.main import app
 from atmoswing_api.app.routes import meta, forecasts, aggregations
+from atmoswing_api.app.utils.errors import InvalidInputError, DataNotFoundError
 from atmoswing_api.app.utils.utils import (validate_path_component, check_region_path,
                                            get_file_path, get_files_pattern)
 
@@ -19,7 +20,7 @@ def test_validate_path_component_valid(name):
 
 @pytest.mark.parametrize("name", INVALID_NAMES)
 def test_validate_path_component_invalid(name):
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(InvalidInputError):
         validate_path_component(name)
 
 
@@ -27,9 +28,15 @@ def test_check_region_path_valid():
     assert check_region_path(DATA_DIR, "adn") == str(os.path.realpath(REGION_PATH))
 
 
-@pytest.mark.parametrize("region", INVALID_NAMES + ["missing", "app.log"])
+@pytest.mark.parametrize("region", INVALID_NAMES)
 def test_check_region_path_invalid(region):
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(InvalidInputError):
+        check_region_path(DATA_DIR, region)
+
+
+@pytest.mark.parametrize("region", ["missing", "app.log"])
+def test_check_region_path_missing(region):
+    with pytest.raises(DataNotFoundError):
         check_region_path(DATA_DIR, region)
 
 
@@ -37,7 +44,7 @@ def test_check_region_path_invalid(region):
     ("..", "Alpes_Nord"), ("4Zo-GFS", ".."), ("..\\..\\x", "Alpes_Nord"),
     ("4Zo-GFS", "a/b")])
 def test_get_file_path_invalid(method, configuration):
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(InvalidInputError):
         get_file_path(REGION_PATH, "2024-10-05T00", method, configuration)
 
 
@@ -47,7 +54,7 @@ def test_get_files_pattern_escapes_method():
 
 
 def test_get_files_pattern_invalid_method():
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(InvalidInputError):
         get_files_pattern(REGION_PATH, "2024-10-05T00", "..")
 
 

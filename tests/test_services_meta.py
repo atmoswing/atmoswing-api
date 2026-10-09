@@ -74,7 +74,7 @@ def test_get_last_forecast_date_no_subdirs(mock_check_region_path, mock_listdir)
     # Mock check_region_path to return a mocked path
     mock_check_region_path.return_value = "/mocked_path/region"
 
-    with pytest.raises(ValueError, match="No subdirectories found in /mocked_path/region"):
+    with pytest.raises(FileNotFoundError, match="No forecast found for region region"):
         _get_last_forecast_date("/mocked_path", "region")
 
 
@@ -92,7 +92,7 @@ def test_get_last_forecast_date_no_files(mock_check_region_path, mock_listdir):
     # Mock check_region_path to return a mocked path
     mock_check_region_path.return_value = "/mocked_path/region"
 
-    with pytest.raises(ValueError, match="No files found in /mocked_path/region/2023/01/01"):
+    with pytest.raises(FileNotFoundError, match="No forecast found for region region"):
         _get_last_forecast_date("/mocked_path", "region")
 
 

@@ -6,6 +6,7 @@ import numpy as np
 import asyncio
 
 from atmoswing_api.app.utils import utils
+from atmoswing_api.app.utils.errors import InvalidInputError, DataNotFoundError
 
 
 async def get_entities_analog_values_percentile(
@@ -55,7 +56,7 @@ def _get_entities_analog_values_percentile(
     files = sorted(glob.glob(pattern))
 
     if not files:
-        raise FileNotFoundError(f"No files found for pattern: {pattern}")
+        raise DataNotFoundError(f"No forecast found for {forecast_date}")
 
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
@@ -135,7 +136,7 @@ def _get_series_synthesis_per_method(data_dir: str, region: str, forecast_date: 
     files = sorted(glob.glob(pattern))
 
     if not files:
-        raise FileNotFoundError(f"No files found for pattern: {pattern}")
+        raise DataNotFoundError(f"No forecast found for {forecast_date}")
 
     method_ids = []
     largest_values = []
@@ -279,7 +280,7 @@ def _get_reference_values(ds, normalize, station_indices):
     try:
         ref_idx = axis.index(normalize)
     except ValueError:
-        raise ValueError(f"normalize must be in {axis}")
+        raise InvalidInputError(f"normalize must be in {axis}")
 
     ref_values = ds.reference_values[station_indices, ref_idx].astype(
         float).values

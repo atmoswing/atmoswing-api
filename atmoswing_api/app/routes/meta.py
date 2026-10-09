@@ -5,6 +5,7 @@ from typing_extensions import Annotated
 from typing import List
 
 from atmoswing_api import config
+from atmoswing_api.app.routes.common import handle_request
 from atmoswing_api.cache import *
 from atmoswing_api.app.services.meta import get_last_forecast_date, \
     get_method_list, get_method_configs_list, get_entities_list, get_config_data, \
@@ -41,20 +42,6 @@ def load_prebuilt_result(settings: config.Settings, func_name: str, region: str,
         return None
 
 
-# Helper function to handle requests and catch exceptions
-async def _handle_request(func, settings: config.Settings, region: str, **kwargs):
-    try:
-        return await func(settings.data_dir, region, **kwargs)
-    except FileNotFoundError as e:
-        logging.error(f"Files not found for region: {region} "
-                      f"(directory: {settings.data_dir})")
-        logging.error(f"Error details: {e}")
-        raise HTTPException(status_code=400, detail=f"Region or forecast not found ({e})")
-    except Exception as e:
-        logging.error(f"An unexpected error occurred: {e}")
-        raise HTTPException(status_code=500, detail=f"Internal Server Error ({e})")
-
-
 @router.get("/show-config",
             summary="Show config")
 async def show_config(
@@ -74,7 +61,7 @@ async def last_forecast_date(
     """
     Get the last available forecast date for a given region.
     """
-    return await _handle_request(get_last_forecast_date, settings, region)
+    return await handle_request(get_last_forecast_date, settings, region)
 
 
 @router.get("/{region}/{forecast_date}/has-forecasts",
@@ -87,7 +74,7 @@ async def has_forecasts(
     """
     Check if forecasts are available for a given region and forecast date.
     """
-    return await _handle_request(has_forecast_date, settings, region,
+    return await handle_request(has_forecast_date, settings, region,
                                  forecast_date=forecast_date)
 
 
@@ -106,7 +93,7 @@ async def list_methods(
     prebuilt = load_prebuilt_result(settings, 'list_methods', region, forecast_date)
     if prebuilt is not None:
         return sanitize_unicode_surrogates(prebuilt)
-    result = await _handle_request(get_method_list, settings, region,
+    result = await handle_request(get_method_list, settings, region,
                                    forecast_date=forecast_date)
     return sanitize_unicode_surrogates(result)
 
@@ -126,7 +113,7 @@ async def list_methods_and_configs(
     prebuilt = load_prebuilt_result(settings, 'list_methods_and_configs', region, forecast_date)
     if prebuilt is not None:
         return sanitize_unicode_surrogates(prebuilt)
-    result = await _handle_request(get_method_configs_list, settings, region,
+    result = await handle_request(get_method_configs_list, settings, region,
                                    forecast_date=forecast_date)
     return sanitize_unicode_surrogates(result)
 
@@ -145,7 +132,7 @@ async def list_entities(
     """
     Get the list of available entities for a given region, forecast_date, method, and configuration.
     """
-    return await _handle_request(get_entities_list, settings, region,
+    return await handle_request(get_entities_list, settings, region,
                                  forecast_date=forecast_date, method=method,
                                  configuration=configuration)
 
@@ -164,6 +151,6 @@ async def list_relevant_entities(
     """
     Get the list of relevant entities for a given region, forecast_date, method, and configuration.
     """
-    return await _handle_request(get_relevant_entities_list, settings, region,
+    return await handle_request(get_relevant_entities_list, settings, region,
                                  forecast_date=forecast_date, method=method,
                                  configuration=configuration)

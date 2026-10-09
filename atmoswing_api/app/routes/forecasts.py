@@ -5,36 +5,17 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from typing_extensions import Annotated
 
 from atmoswing_api import config
+from atmoswing_api.app.routes.common import handle_request
 from atmoswing_api.cache import *
 from atmoswing_api.app.models.models import *
 from atmoswing_api.app.services.forecasts import *
 
 router = APIRouter()
-debug = False
 
 
 @lru_cache
 def get_settings():
     return config.Settings()
-
-
-# Helper function to handle requests and catch exceptions
-async def _handle_request(func, settings: config.Settings, region: str, **kwargs):
-    try:
-        result = await func(settings.data_dir, region, **kwargs)
-        if debug:
-            logging.info(f"Result from {func.__name__}: {result}")
-        if result is None:
-            raise ValueError("The result is None")
-        return result
-    except FileNotFoundError as e:
-        logging.error(f"Files not found for region: {region} "
-                      f"(directory: {settings.data_dir})")
-        logging.error(f"Error details: {e}")
-        raise HTTPException(status_code=400, detail=f"Region or forecast not found ({e})")
-    except Exception as e:
-        logging.error(f"An unexpected error occurred: {e}")
-        raise HTTPException(status_code=500, detail=f"Internal Server Error ({e})")
 
 
 @router.get("/{region}/{forecast_date}/{method}/{configuration}/{lead_time}/analog-dates",
@@ -52,7 +33,7 @@ async def analog_dates(
     """
     Get the analog dates for a given region, forecast date, method, configuration, and lead time.
     """
-    return await _handle_request(get_analog_dates, settings, region,
+    return await handle_request(get_analog_dates, settings, region,
                                  forecast_date=forecast_date, method=method,
                                  configuration=configuration, lead_time=lead_time)
 
@@ -72,7 +53,7 @@ async def analog_criteria(
     """
     Get the analog criteria for a given region, forecast date, method, configuration, and lead time.
     """
-    return await _handle_request(get_analog_criteria, settings, region,
+    return await handle_request(get_analog_criteria, settings, region,
                                  forecast_date=forecast_date, method=method,
                                  configuration=configuration, lead_time=lead_time)
 
@@ -94,7 +75,7 @@ async def entities_analog_values_percentile(
     """
     Get the precipitation values for a given region, forecast date, method, configuration, lead time, and percentile.
     """
-    return await _handle_request(get_entities_analog_values_percentile, settings, region,
+    return await handle_request(get_entities_analog_values_percentile, settings, region,
                                  forecast_date=forecast_date, method=method,
                                  configuration=configuration, lead_time=lead_time,
                                  percentile=percentile, normalize=normalize)
@@ -115,7 +96,7 @@ async def reference_values(
     """
     Get the reference values for a given region, forecast date, method, configuration, and entity.
     """
-    return await _handle_request(get_reference_values, settings, region,
+    return await handle_request(get_reference_values, settings, region,
                                  forecast_date=forecast_date, method=method,
                                  configuration=configuration, entity=entity)
 
@@ -136,7 +117,7 @@ async def series_analog_values_best(
     """
     Get the precipitation values for the best analogs and for a given region, forecast date, method, configuration, and entity.
     """
-    return await _handle_request(get_series_analog_values_best, settings, region,
+    return await handle_request(get_series_analog_values_best, settings, region,
                                  forecast_date=forecast_date, method=method,
                                  configuration=configuration, entity=entity,
                                  number=number)
@@ -158,7 +139,7 @@ async def series_analog_values_percentiles(
     """
     Get the precipitation values for the provided percentiles and for a given region, forecast date, method, configuration, and entity.
     """
-    return await _handle_request(get_series_analog_values_percentiles, settings, region,
+    return await handle_request(get_series_analog_values_percentiles, settings, region,
                                  forecast_date=forecast_date, method=method,
                                  configuration=configuration, entity=entity,
                                  percentiles=percentiles)
@@ -181,7 +162,7 @@ async def series_analog_values_percentiles_history(
     """
     Get the precipitation values for the provided percentiles and for a given region, forecast date, method, configuration, and entity.
     """
-    return await _handle_request(get_series_analog_values_percentiles_history, settings,
+    return await handle_request(get_series_analog_values_percentiles_history, settings,
                                  region, forecast_date=forecast_date, method=method,
                                  configuration=configuration, entity=entity,
                                  percentiles=percentiles, number=number)
@@ -203,7 +184,7 @@ async def analogs(
     """
     Get the analogs for a given region, forecast date, method, configuration, entity, and lead time.
     """
-    return await _handle_request(get_analogs, settings, region,
+    return await handle_request(get_analogs, settings, region,
                                  forecast_date=forecast_date, method=method,
                                  configuration=configuration, entity=entity,
                                  lead_time=lead_time)
@@ -225,7 +206,7 @@ async def analog_values(
     """
     Get the precipitation values for a given region, forecast date, method, configuration, entity, lead time.
     """
-    return await _handle_request(get_analog_values, settings, region,
+    return await handle_request(get_analog_values, settings, region,
                                  forecast_date=forecast_date, method=method,
                                  configuration=configuration, entity=entity,
                                  lead_time=lead_time)
@@ -248,7 +229,7 @@ async def analog_values_percentiles(
     """
     Get the precipitation values for a given region, forecast date, method, configuration, entity, lead time, and percentile.
     """
-    return await _handle_request(get_analog_values_percentiles, settings, region,
+    return await handle_request(get_analog_values_percentiles, settings, region,
                                  forecast_date=forecast_date, method=method,
                                  configuration=configuration, entity=entity,
                                  lead_time=lead_time, percentiles=percentiles)
@@ -271,7 +252,7 @@ async def analog_values_best(
     """
     Get the precipitation values for the best analogs and for a given region, forecast date, method, configuration, entity, and lead time.
     """
-    return await _handle_request(get_analog_values_best, settings, region,
+    return await handle_request(get_analog_values_best, settings, region,
                                  forecast_date=forecast_date, method=method,
                                  configuration=configuration, entity=entity,
                                  lead_time=lead_time, number=number)
