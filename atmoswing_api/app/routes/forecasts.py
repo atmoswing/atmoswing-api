@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from typing_extensions import Annotated
 
 from atmoswing_api import config
-from atmoswing_api.app.routes.common import handle_request
+from atmoswing_api.app.routes.common import handle_request, resolve_latest
 from atmoswing_api.cache import *
 from atmoswing_api.app.models.models import *
 from atmoswing_api.app.services.forecasts import *
@@ -22,6 +22,7 @@ def get_settings():
             summary="Analog dates for a given forecast and target date",
             response_model=AnalogDatesResponse,
             response_model_exclude_none=True)
+@resolve_latest
 @redis_cache(ttl=3600)
 async def analog_dates(
         region: str,
@@ -42,6 +43,7 @@ async def analog_dates(
             summary="Analog criteria for a given forecast and target date",
             response_model=AnalogCriteriaResponse,
             response_model_exclude_none=True)
+@resolve_latest
 @redis_cache(ttl=3600)
 async def analog_criteria(
         region: str,
@@ -62,6 +64,7 @@ async def analog_criteria(
             summary="Values for all entities for a given quantile, forecast and target date",
             response_model=EntitiesValuesPercentileResponse,
             response_model_exclude_none=True)
+@resolve_latest
 @redis_cache(ttl=3600)
 async def entities_analog_values_percentile(
         region: str,
@@ -85,6 +88,7 @@ async def entities_analog_values_percentile(
             summary="Reference values (e.g. for different return periods) for a given entity",
             response_model=ReferenceValuesResponse,
             response_model_exclude_none=True)
+@resolve_latest
 @redis_cache(ttl=3600)
 async def reference_values(
         region: str,
@@ -105,6 +109,7 @@ async def reference_values(
             summary="Analog values of the best analogs for a given entity (time series)",
             response_model=SeriesAnalogValuesResponse,
             response_model_exclude_none=True)
+@resolve_latest
 @redis_cache(ttl=3600)
 async def series_analog_values_best(
         region: str,
@@ -127,6 +132,7 @@ async def series_analog_values_best(
             summary="Values for one entity for a given quantile, forecast and target date",
             response_model=SeriesValuesPercentilesResponse,
             response_model_exclude_none=True)
+@resolve_latest
 @redis_cache(ttl=3600)
 async def series_analog_values_percentiles(
         region: str,
@@ -149,6 +155,7 @@ async def series_analog_values_percentiles(
             summary="Values from the past forecasts for one entity, a given quantile and target date",
             response_model=SeriesValuesPercentilesHistoryResponse,
             response_model_exclude_none=True)
+@resolve_latest
 @redis_cache(ttl=3600)
 async def series_analog_values_percentiles_history(
         region: str,
@@ -172,6 +179,7 @@ async def series_analog_values_percentiles_history(
             summary="Details of the analogs (rank, date, criteria, value) for a given forecast and entity",
             response_model=AnalogsResponse,
             response_model_exclude_none=True)
+@resolve_latest
 @redis_cache(ttl=3600)
 async def analogs(
         region: str,
@@ -194,6 +202,7 @@ async def analogs(
             summary="Analog values for a given entity and target date",
             response_model=AnalogValuesResponse,
             response_model_exclude_none=True)
+@resolve_latest
 @redis_cache(ttl=3600)
 async def analog_values(
         region: str,
@@ -216,6 +225,7 @@ async def analog_values(
             summary="Values for one entity for a given quantile, forecast and target date",
             response_model=AnalogValuesPercentilesResponse,
             response_model_exclude_none=True)
+@resolve_latest
 @redis_cache(ttl=3600)
 async def analog_values_percentiles(
         region: str,
@@ -239,6 +249,7 @@ async def analog_values_percentiles(
             summary="Values for one entity for a given quantile, forecast and target date",
             response_model=AnalogValuesResponse,
             response_model_exclude_none=True)
+@resolve_latest
 @redis_cache(ttl=3600)
 async def analog_values_best(
         region: str,

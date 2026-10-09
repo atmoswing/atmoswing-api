@@ -26,7 +26,7 @@ API docs at `/docs`, `/redoc`, `/minidocs` (custom template `templates/api_doc.h
 
 **Service pattern:** each service exposes an `async def get_x(data_dir, region, ...)` that just does `asyncio.to_thread(_get_x, ...)`; the synchronous `_get_x` does the blocking xarray/NetCDF work. Add new endpoints following this pair pattern. Every service accepts `forecast_date == "latest"`, resolved via `utils.get_last_forecast_date`.
 
-**Route pattern:** routes inject `config.Settings` through an `lru_cache`d `get_settings` dependency and call services through a `_handle_request` helper that maps `FileNotFoundError` → HTTP 400 and other errors → 500. Routes are wrapped with `@redis_cache(ttl=...)` from `atmoswing_api/cache.py` (placed *below* `@router.get`), which keys on function name + args and backs off for 5 s whenever Redis errors.
+**Route pattern:** routes inject `config.Settings` through an `lru_cache`d `get_settings` dependency and call services through a `_handle_request` helper that maps `FileNotFoundError` → HTTP 400 and other errors → 500. Routes are decorated `@router.get` → `@resolve_latest` → `@redis_cache(ttl=...)`, in that order. `resolve_latest` (`routes/common.py`) turns `forecast_date` into its canonical `YYYY-MM-DDTHH` form and resolves `latest` (reused for 10 s), so the Redis and prebuilt caches never key on `latest`. `redis_cache` (`atmoswing_api/cache.py`) keys on function name + args and backs off for 5 s whenever Redis errors.
 
 **Data layout:** `{data_dir}/{region}/YYYY/MM/DD/YYYY-MM-DD_HH.<method>.<config>.nc` (region dirs may be symlinks; see `check_region_path`). `tests/data/` holds real sample forecasts for regions `adn` and `zap`.
 

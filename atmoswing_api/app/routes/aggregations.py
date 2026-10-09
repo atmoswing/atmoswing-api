@@ -3,7 +3,7 @@ from functools import lru_cache
 from fastapi import APIRouter, HTTPException, Depends, Query
 
 from atmoswing_api import config
-from atmoswing_api.app.routes.common import handle_request
+from atmoswing_api.app.routes.common import handle_request, resolve_latest
 from atmoswing_api.cache import *
 from atmoswing_api.app.models.models import *
 from atmoswing_api.app.services.aggregations import *
@@ -44,6 +44,7 @@ def load_prebuilt_result(settings: config.Settings, func_name: str, region: str,
                     "relevant configuration per entity",
             response_model=EntitiesValuesPercentileAggregationResponse,
             response_model_exclude_none=True)
+@resolve_latest
 @redis_cache(ttl=3600)
 async def entities_analog_values_percentile(
         region: str,
@@ -71,6 +72,7 @@ async def entities_analog_values_percentile(
                     "the relevant configurations per entity",
             response_model=SeriesSynthesisPerMethodListResponse,
             response_model_exclude_none=True)
+@resolve_latest
 @redis_cache(ttl=3600)
 async def series_synthesis_per_method(
         region: str,
@@ -94,6 +96,7 @@ async def series_synthesis_per_method(
                     "and percentile, aggregated by time steps",
             response_model=SeriesSynthesisTotalListResponse,
             response_model_exclude_none=True)
+@resolve_latest
 @redis_cache(ttl=3600)
 async def series_synthesis_total(
         region: str,
