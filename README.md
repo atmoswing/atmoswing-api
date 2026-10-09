@@ -53,7 +53,7 @@ services:
 To remove the past forecasts automatically, set a cron tab to run:
 
 ```
-sudo docker exec atmoswing-api-main python3 /app/atmoswing_api/app/utils/cleaner.py --data-dir /app/data --keep-days 60
+sudo docker exec atmoswing-api-main python3 /app/atmoswing_api/scripts/cleaner.py --data-dir /app/data --keep-days 60
 ```
 
 
@@ -61,7 +61,7 @@ sudo docker exec atmoswing-api-main python3 /app/atmoswing_api/app/utils/cleaner
 
 Run the local server from the IDE with: 
 
-    uvicorn app.main:app --reload
+    uvicorn atmoswing_api.app.main:app --reload
 
 ## Documentation
 
