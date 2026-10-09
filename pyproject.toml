@@ -2,6 +2,7 @@
 name = "atmoswing-api"
 version = "1.1.1"
 description = "A web API for AtmoSwing forecasts"
+readme = "README.md"
 requires-python = ">=3.10"
 authors = [
     { name = "Pascal Horton", email = "pascal.horton@terranum.ch" }
@@ -9,16 +10,20 @@ authors = [
 dependencies = [
     "fastapi",
     "uvicorn[standard]",
+    "numpy",
     "xarray",
     "h5netcdf",
     "h5py",
+    "dask",
     "pydantic",
     "pydantic-settings",
     "python-dotenv",
-    "dask",
-    "pytest",
-    "pytest-asyncio",
+    "typing-extensions",
+    "slowapi",
+    "jinja2",
+    "redis>=4.6.0",
 ]
+
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -26,11 +31,22 @@ classifiers = [
 ]
 license = { file = "LICENSE" }
 
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-asyncio",
+    "httpx",
+]
+
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 # Search from project root and include the root package and all its subpackages
 where = ["."]
 include = ["atmoswing_api*"]
+
+[tool.setuptools.package-data]
+# Jinja templates used by the /minidocs route
+atmoswing_api = ["templates/*.html"]

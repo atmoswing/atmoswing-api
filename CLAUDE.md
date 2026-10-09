@@ -9,7 +9,7 @@ FastAPI web service that serves AtmoSwing analog-method forecasts (NetCDF files)
 ## Commands
 
 ```bash
-pip install -r requirements.txt && pip install -e .     # requirements.txt has extras (httpx, slowapi, jinja2, redis) not in pyproject
+pip install -e ".[test]"                                # runtime + test dependencies (all in pyproject.toml)
 uvicorn atmoswing_api.app.main:app --reload              # dev server
 pytest                                                   # all tests (asyncio_mode=auto via pytest.ini)
 pytest tests/test_routes_forecasts.py::test_analog_dates # single test

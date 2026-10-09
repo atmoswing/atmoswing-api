@@ -9,12 +9,9 @@ ENV PYTHONUNBUFFERED=1 \
 # Set the working directory
 WORKDIR /app
 
-# Copy and install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy the package and install it
-COPY . .
+# Copy the package and install it with its dependencies
+COPY pyproject.toml README.md LICENSE ./
+COPY atmoswing_api ./atmoswing_api
 RUN pip install --no-cache-dir .
 
 # Expose port for FastAPI

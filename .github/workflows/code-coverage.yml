@@ -20,11 +20,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install flake8 pytest pytest-cov
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
-    - name: Install the package
-      run: pip install .
+        python -m pip install pytest-cov
+        pip install -e ".[test]"
 
     - name: Test with coverage
       run: pytest --cov=atmoswing_api ./tests --cov-report=xml
