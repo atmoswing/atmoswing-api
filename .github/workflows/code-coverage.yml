@@ -11,6 +11,13 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    # Redis is used by the cache tests (they are skipped when it is not reachable)
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+
     steps:
     - uses: actions/checkout@v4
 
