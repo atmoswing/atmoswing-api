@@ -19,6 +19,8 @@ data_dir=/opt/atmoswing/data
 log_file=/var/log/atmoswing-api/app.log
 # Optional: verbose logging of the API (not of third-party libraries)
 debug=false
+# Optional: requests allowed per client IP, all routes together (default: 600/minute)
+rate_limit=600/minute
 ```
 
 ## Usage with Docker
@@ -43,6 +45,10 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      # Address(es) of the reverse proxy, trusted to report the client IP through
+      # X-Forwarded-For (comma-separated IPs or networks). Without it, all clients
+      # behind the proxy share the same rate limit budget.
+      - FORWARDED_ALLOW_IPS=172.16.0.0/12
     restart: unless-stopped
 
   redis:
@@ -52,6 +58,12 @@ services:
       - "6379:6379"
     restart: unless-stopped
 ```
+
+Rate limiting identifies clients by their IP address. When the API runs behind a
+reverse proxy (nginx, Traefik, ...), set `FORWARDED_ALLOW_IPS` to the address the
+proxy connects from (e.g. its Docker network), and make the proxy set the
+`X-Forwarded-For` header. Never use `*` when the API port is reachable without the
+proxy: clients could then send any address and bypass the rate limit.
 
 ## Cleanup
 

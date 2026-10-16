@@ -6,6 +6,8 @@ class Settings(BaseSettings):
     debug: bool = False
     # File receiving the errors (everything in debug mode); None logs to the terminal only
     log_file: str | None = None
+    # Requests allowed per client (IP address), all routes together
+    rate_limit: str = "600/minute"
 
     model_config = SettingsConfigDict(env_file=".env")
 

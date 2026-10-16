@@ -1,13 +1,11 @@
 from pathlib import Path
 from fastapi.responses import HTMLResponse
-from fastapi import APIRouter, Request
-from slowapi import Limiter
-from slowapi.util import get_remote_address
+from fastapi import APIRouter, Depends, Request
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-router = APIRouter()
+from atmoswing_api.app.limiter import route_limit
 
-limiter = Limiter(key_func=get_remote_address)
+router = APIRouter()
 
 _template = Environment(
     loader=FileSystemLoader(Path(__file__).parents[2] / "templates"),
@@ -15,8 +13,8 @@ _template = Environment(
 ).get_template("api_doc.html")
 
 
-@router.get("/minidocs", summary="Generate API documentation HTML")
-@limiter.limit("10/minute")
+@router.get("/minidocs", summary="Generate API documentation HTML",
+            dependencies=[Depends(route_limit("10/minute"))])
 async def export_api_docs(request: Request):
     # The OpenAPI schema is used rather than app.routes, whose structure depends on
     # the FastAPI version (recent versions wrap the routes of included routers).

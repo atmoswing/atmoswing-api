@@ -1,5 +1,6 @@
 import os
 import pytest
+from atmoswing_api.app import limiter
 from atmoswing_api.app.main import app
 from atmoswing_api.config import Settings, get_settings
 
@@ -17,6 +18,8 @@ def test_data_dir():
     overrides after each test so that tests cannot affect each other.
     """
     overrides = dict(app.dependency_overrides)
+    # All test requests come from the same client: start each test with a full budget
+    limiter.reset()
     _use_data_dir(DATA_DIR)
     yield
     app.dependency_overrides.clear()

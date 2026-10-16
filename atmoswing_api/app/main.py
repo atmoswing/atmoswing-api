@@ -8,11 +8,8 @@ from atmoswing_api import cache
 from atmoswing_api.config import get_settings
 from atmoswing_api.app.utils.logger import configure_logging
 from atmoswing_api.__version__ import __version__
+from atmoswing_api.app.limiter import RateLimitMiddleware
 from atmoswing_api.app.routes import meta, forecasts, aggregations, docs
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
 
 configure_logging(get_settings())
 logger = logging.getLogger(__name__)
@@ -33,12 +30,8 @@ app = FastAPI(
     version=__version__,
 )
 
-# Set up rate limiter
-limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
-app.state.limiter = limiter
-
-# Add SlowAPI middleware for rate limiting
-app.add_middleware(SlowAPIMiddleware)
+# Rate limiting (see app/limiter.py)
+app.add_middleware(RateLimitMiddleware)
 
 # Configure CORS middleware -- disabled as it is not working as expected.
 #app.add_middleware(
@@ -65,6 +58,7 @@ async def custom_http_exception_handler(request: Request, exc: StarletteHTTPExce
     return JSONResponse(
         status_code=exc.status_code,
         content={"detail": exc.detail},
+        headers=exc.headers,
     )
 
 @app.exception_handler(Exception)
@@ -73,8 +67,3 @@ async def global_exception_handler(request: Request, exc: Exception):
     if isinstance(exc, MemoryError):
         logger.error("MemoryError: Possible resource exhaustion!")
     return JSONResponse(status_code=500, content={"detail": "Internal server error."})
-
-@app.exception_handler(RateLimitExceeded)
-async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
-    logger.warning("Rate limit exceeded: %s", exc)
-    return JSONResponse(status_code=429, content={"detail": "Rate limit exceeded. Please try again later."})

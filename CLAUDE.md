@@ -34,7 +34,7 @@ API docs at `/docs`, `/redoc`, `/minidocs` (custom template `templates/api_doc.h
 
 **Other scripts:** `scripts/cleaner.py --data-dir ... --keep-days 60` deletes old forecasts; `scripts/export_docs.py` exports the API docs.
 
-**App-level:** `main.py` sets up slowapi rate limiting (120/min per IP), a custom 404 message, and a global 500 handler. CORS middleware is intentionally disabled.
+**App-level:** `main.py` sets up rate limiting, a custom 404 message, and a global 500 handler. Rate limiting (`app/limiter.py`, on the `limits` library; slowapi was dropped because its middleware cannot find routes in recent FastAPI) is an ASGI middleware applying one per-client budget to all requests (`rate_limit` setting, default 600/minute), plus stricter per-route limits via `dependencies=[Depends(route_limit("10/minute"))]` (e.g. `/minidocs`). Counters are in memory, per worker. Behind a proxy, the client IP comes from `X-Forwarded-For` only if uvicorn trusts the proxy (`FORWARDED_ALLOW_IPS`). `tests/conftest.py` resets the counters before each test. CORS middleware is intentionally disabled.
 
 ## Testing
 

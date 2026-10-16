@@ -19,7 +19,7 @@ dependencies = [
     "pydantic-settings",
     "python-dotenv",
     "typing-extensions",
-    "slowapi",
+    "limits>=4",
     "jinja2",
     "redis>=5.0.1",
 ]
