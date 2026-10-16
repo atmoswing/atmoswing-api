@@ -50,3 +50,17 @@ include = ["atmoswing_api*"]
 [tool.setuptools.package-data]
 # Jinja templates used by the /minidocs route
 atmoswing_api = ["templates/*.html"]
+
+[tool.ruff]
+target-version = "py310"
+# Same width as the previous flake8 configuration
+line-length = 127
+extend-exclude = ["build", "data"]
+
+[tool.ruff.lint]
+# Syntax errors, statements (E7), pyflakes (F) and bugbear (B)
+select = ["E9", "E7", "F", "B"]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI declares parameters with calls in argument defaults
+extend-immutable-calls = ["fastapi.Query", "fastapi.Path", "fastapi.Depends"]

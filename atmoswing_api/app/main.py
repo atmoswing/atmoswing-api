@@ -1,7 +1,6 @@
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from atmoswing_api import cache
@@ -34,6 +33,7 @@ app = FastAPI(
 app.add_middleware(RateLimitMiddleware)
 
 # Configure CORS middleware -- disabled as it is not working as expected.
+#from fastapi.middleware.cors import CORSMiddleware
 #app.add_middleware(
 #    CORSMiddleware,
 #    allow_origins=["*"],

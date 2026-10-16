@@ -44,7 +44,7 @@ async def handle_request(func, settings: config.Settings, region: str, **kwargs)
     try:
         result = await func(settings.data_dir, region, **kwargs)
     except Exception as e:
-        raise _to_http_exception(e, f"{func.__name__}, region {region}, {kwargs}")
+        raise _to_http_exception(e, f"{func.__name__}, region {region}, {kwargs}") from e
 
     if result is None:
         logger.error(f"{func.__name__} returned None for region {region} ({kwargs})")
@@ -88,7 +88,7 @@ def resolve_latest(func):
             kwargs["forecast_date"] = await resolve_forecast_date(
                 kwargs["settings"].data_dir, region, kwargs["forecast_date"])
         except Exception as e:
-            raise _to_http_exception(e, f"resolving forecast date, region {region}")
+            raise _to_http_exception(e, f"resolving forecast date, region {region}") from e
         return await func(*args, **kwargs)
 
     return wrapper

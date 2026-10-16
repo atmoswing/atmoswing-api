@@ -92,7 +92,7 @@ def convert_to_date(date_str: str) -> date:
     try:
         return datetime.strptime(date_str, "%Y-%m-%d").date()
     except ValueError:
-        raise InvalidInputError(f"Invalid date format ({date_str})")
+        raise InvalidInputError(f"Invalid date format ({date_str})") from None
 
 
 def convert_to_datetime(datetime_str: str) -> datetime:
@@ -154,7 +154,7 @@ def convert_to_target_date(forecast_date, lead_time) -> datetime:
             try:
                 dt = int(lead_time)  # in hours
             except ValueError:
-                raise InvalidInputError(f"Invalid lead time format ({lead_time})")
+                raise InvalidInputError(f"Invalid lead time format ({lead_time})") from None
             target_date = forecast_date + timedelta(hours=dt)
             return target_date
 
@@ -477,16 +477,16 @@ def get_target_date_index(
     target_date = convert_to_datetime(target_date)
     target_date_idx = -1
     target_date_found = None
-    for i, date in enumerate(target_dates):
-        date = np.datetime64(date).astype('datetime64[s]').item()
-        if date == target_date:
-            return i, date
-        elif date < target_date:
+    for i, value in enumerate(target_dates):
+        date_i = np.datetime64(value).astype('datetime64[s]').item()
+        if date_i == target_date:
+            return i, date_i
+        elif date_i < target_date:
             if i == len(target_dates) - 1:
                 return None
             target_date_idx = i
-            target_date_found = date
-        elif date > target_date:
+            target_date_found = date_i
+        elif date_i > target_date:
             break
 
     if target_date_idx < 0:

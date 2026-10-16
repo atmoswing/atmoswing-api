@@ -13,7 +13,8 @@ pip install -e ".[test]"                                # runtime + test depende
 uvicorn atmoswing_api.app.main:app --reload              # dev server
 pytest                                                   # all tests (asyncio_mode=auto via pytest.ini)
 pytest tests/test_routes_forecasts.py::test_analog_dates # single test
-flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics   # CI's blocking lint check
+ruff check .                                             # lint (rules in pyproject.toml; CI only reports them)
+ruff check . --select=E9,F63,F7,F82                      # CI's blocking lint check (syntax errors, undefined names)
 ```
 
 Configuration comes from env / `.env` via `atmoswing_api/config.py` (`data_dir`, `debug`, `log_file`). Logging is configured once in `main.py` (`utils/logger.py::configure_logging`) on the `atmoswing_api` logger only; modules use `logging.getLogger(__name__)`. Redis is optional: `REDIS_HOST`/`REDIS_PORT` (default localhost:6379); without it, caching is silently bypassed.

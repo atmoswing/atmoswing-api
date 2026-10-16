@@ -265,7 +265,7 @@ def _get_reference_values(ds, normalize, station_indices):
     try:
         ref_idx = axis.index(normalize)
     except ValueError:
-        raise InvalidInputError(f"normalize must be in {axis}")
+        raise InvalidInputError(f"normalize must be in {axis}") from None
 
     ref_values = ds.reference_values[station_indices, ref_idx].astype(
         float).values

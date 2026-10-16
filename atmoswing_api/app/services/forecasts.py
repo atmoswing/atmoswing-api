@@ -179,7 +179,7 @@ def _get_analogs(data_dir: str, region: str, forecast_date: str, method: str,
             ranks = list(range(1, len(analog_dates) + 1))
             analogs = [{"date": date, "criteria": criteria, "value": value, "rank": rank}
                        for date, criteria, value, rank in
-                       zip(analog_dates, analog_criteria, values, ranks)]
+                       zip(analog_dates, analog_criteria, values, ranks, strict=True)]
 
     return {
         "parameters": {
@@ -410,7 +410,7 @@ def _get_entities_analog_values_percentile(
             try:
                 ref_idx = axis.index(normalize)
             except ValueError:
-                raise InvalidInputError(f"normalize must be in {axis}")
+                raise InvalidInputError(f"normalize must be in {axis}") from None
             ref_values = ds.reference_values[:, ref_idx].astype(float).values
 
             # Normalize the values

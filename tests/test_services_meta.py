@@ -3,7 +3,7 @@ import os
 from unittest.mock import patch, MagicMock
 
 from atmoswing_api.app.services.meta import get_last_forecast_date, \
-    _get_last_forecast_date, get_method_list, _get_methods_from_netcdf, \
+    get_method_list, _get_methods_from_netcdf, \
     get_method_configs_list, get_entities_list, get_relevant_entities_list
 
 # Path to the data directory
