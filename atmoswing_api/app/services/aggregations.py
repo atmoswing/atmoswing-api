@@ -1,3 +1,4 @@
+import os
 import xarray as xr
 import numpy as np
 import asyncio
@@ -60,8 +61,10 @@ def _get_entities_analog_values_percentile(
             # Select the relevant stations
             if all_station_ids is None:
                 all_station_ids = ds.station_ids.values.tolist()
-            else:
-                assert all_station_ids == ds.station_ids.values.tolist()
+            elif all_station_ids != ds.station_ids.values.tolist():
+                # The values of all the configurations are combined per station
+                raise ValueError(f"The stations of {os.path.basename(file_path)} "
+                                 f"differ from those of the other configurations")
             station_indices = utils.get_relevant_stations_idx(ds)
 
             # Extracting the values

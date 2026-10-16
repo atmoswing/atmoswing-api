@@ -467,8 +467,10 @@ def get_target_date_index(
     -------
     target_date_idx: int
         The index of the target date in the dataset.
-    target_date_found: datetime|None
-        The date found in the dataset that matches the target date.
+    target_date_found: datetime
+        The date found in the dataset that matches the target date (the last one
+        before it when there is no exact match).
+    None is returned when the target date is outside the forecast target dates.
     """
     # Find the lead time
     target_dates = ds.target_dates.values
@@ -486,6 +488,10 @@ def get_target_date_index(
             target_date_found = date
         elif date > target_date:
             break
+
+    if target_date_idx < 0:
+        # The target date is before the first target date of the forecast
+        return None
 
     return target_date_idx, target_date_found
 
