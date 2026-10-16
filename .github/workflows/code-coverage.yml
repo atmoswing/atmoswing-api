@@ -19,10 +19,12 @@ jobs:
           - 6379:6379
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v7
+      with:
+        python-version: "3.12"
 
     - name: Install dependencies
       run: |
@@ -34,7 +36,7 @@ jobs:
       run: pytest --cov=atmoswing_api ./tests --cov-report=xml
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@v7
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         fail_ci_if_error: true

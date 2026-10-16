@@ -619,7 +619,7 @@ def sanitize_unicode_surrogates(obj):
 
 
 def decode_surrogate_escaped_utf8(s: str) -> str:
-    """Repair strings where UTF-8 bytes were turned into low-surrogate code points
+    r"""Repair strings where UTF-8 bytes were turned into low-surrogate code points
     via the 'surrogateescape' error handler or similar mishandling, e.g.
     'C\udcc3\udca9vennes' -> 'Cévennes'. We rebuild the original byte stream by
     mapping each U+DC80..U+DCFF to its raw byte 0x80..0xFF, while encoding all

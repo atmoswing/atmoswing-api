@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-FastAPI web service that serves AtmoSwing analog-method forecasts (NetCDF files) as JSON. Python >= 3.10 (CI tests 3.10–3.12; Docker uses 3.12).
+FastAPI web service that serves AtmoSwing analog-method forecasts (NetCDF files) as JSON. Python >= 3.10 (CI tests 3.10–3.14; Docker uses 3.12).
 
 ## Commands
 
@@ -46,4 +46,4 @@ The image runs as a non-root user (`APP_UID`/`APP_GID` build args, default 1000)
 
 ## Release
 
-Version lives in both `pyproject.toml` and `atmoswing_api/__version__.py`; update both and `CHANGELOG.md`. GitHub workflows publish to PyPI and build the `atmoswing/web-api` Docker image.
+Version lives in both `pyproject.toml` and `atmoswing_api/__version__.py`; update both and `CHANGELOG.md`. GitHub workflows publish to PyPI and build the `atmoswing/web-api` Docker image; both call `tests.yml` (a reusable workflow) first, and the Docker workflow smoke-tests the built image (healthy, `/minidocs` lists routes, non-root) before pushing.
