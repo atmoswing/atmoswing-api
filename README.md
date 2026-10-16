@@ -14,6 +14,11 @@ Specify the environment variables in a `.env` file:
 # .env
 # Directory where the forecasts are stored
 data_dir=/opt/atmoswing/data
+# Optional: file receiving the errors (all messages when debug=true).
+# Logs always go to the terminal (stdout in Docker).
+log_file=/var/log/atmoswing-api/app.log
+# Optional: verbose logging of the API (not of third-party libraries)
+debug=false
 ```
 
 ## Usage with Docker

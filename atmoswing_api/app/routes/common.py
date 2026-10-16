@@ -8,6 +8,8 @@ from atmoswing_api import config
 from atmoswing_api.app.utils import utils
 from atmoswing_api.app.utils.errors import InvalidInputError, DataNotFoundError
 
+logger = logging.getLogger(__name__)
+
 # Duration (in seconds) during which a resolved 'latest' forecast date is reused
 # before the region directory is scanned again.
 LATEST_FORECAST_DATE_TTL = 10.0
@@ -23,15 +25,15 @@ def _to_http_exception(e: Exception, context: str) -> HTTPException:
     are exposed.
     """
     if isinstance(e, InvalidInputError):
-        logging.info(f"Invalid request ({context}): {e}")
+        logger.info(f"Invalid request ({context}): {e}")
         return HTTPException(status_code=400, detail=f"Invalid request ({e})")
     if isinstance(e, DataNotFoundError):
-        logging.info(f"Data not found ({context}): {e}")
+        logger.info(f"Data not found ({context}): {e}")
         return HTTPException(status_code=400, detail=f"Region or forecast not found ({e})")
     if isinstance(e, FileNotFoundError):
-        logging.error(f"File not found ({context})", exc_info=e)
+        logger.error(f"File not found ({context})", exc_info=e)
         return HTTPException(status_code=400, detail="Region or forecast not found")
-    logging.error(f"Unexpected error ({context})", exc_info=e)
+    logger.error(f"Unexpected error ({context})", exc_info=e)
     return HTTPException(status_code=500, detail="Internal server error.")
 
 
@@ -45,7 +47,7 @@ async def handle_request(func, settings: config.Settings, region: str, **kwargs)
         raise _to_http_exception(e, f"{func.__name__}, region {region}, {kwargs}")
 
     if result is None:
-        logging.error(f"{func.__name__} returned None for region {region} ({kwargs})")
+        logger.error(f"{func.__name__} returned None for region {region} ({kwargs})")
         raise HTTPException(status_code=500, detail="Internal server error.")
 
     return result

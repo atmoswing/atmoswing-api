@@ -11,6 +11,8 @@ from datetime import datetime, date, timedelta
 
 from atmoswing_api.app.utils.errors import InvalidInputError, DataNotFoundError
 
+logger = logging.getLogger(__name__)
+
 def validate_path_component(name: str, label: str = "name") -> str:
     """
     Ensure that a user-provided value can safely be used as a single file or
@@ -690,5 +692,5 @@ def load_prebuilt_result(data_dir: str, func_name: str, region: str, forecast_da
         data = json.loads(cache_path.read_text(encoding='utf-8'))
         return data.get('result')
     except Exception as e:
-        logging.warning(f"Failed to read prebuilt cache {cache_path}: {e}")
+        logger.warning("Failed to read prebuilt cache %s: %s", cache_path.name, e)
         return None

@@ -16,7 +16,7 @@ pytest tests/test_routes_forecasts.py::test_analog_dates # single test
 flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics   # CI's blocking lint check
 ```
 
-Configuration comes from env / `.env` via `atmoswing_api/config.py` (`data_dir`, `debug`). Redis is optional: `REDIS_HOST`/`REDIS_PORT` (default localhost:6379); without it, caching is silently bypassed.
+Configuration comes from env / `.env` via `atmoswing_api/config.py` (`data_dir`, `debug`, `log_file`). Logging is configured once in `main.py` (`utils/logger.py::configure_logging`) on the `atmoswing_api` logger only; modules use `logging.getLogger(__name__)`. Redis is optional: `REDIS_HOST`/`REDIS_PORT` (default localhost:6379); without it, caching is silently bypassed.
 
 API docs at `/docs`, `/redoc`, `/minidocs` (custom template `templates/api_doc.html`), `/openapi.json`.
 

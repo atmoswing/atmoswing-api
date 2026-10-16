@@ -7,12 +7,7 @@ import functools
 import os
 import time
 
-from atmoswing_api import config
-from atmoswing_api.app.utils.logger import get_logger
-
-logger = get_logger()
-debug_mode = config.Settings().debug
-logger.setLevel(logging.DEBUG if debug_mode else logging.INFO)
+logger = logging.getLogger(__name__)
 
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
@@ -71,8 +66,8 @@ def _mark_unavailable(operation: str, error: Exception):
     _redis_retry_at = time.time() + _redis_cooldown
     if isinstance(error, RuntimeError):
         redis_client = _create_client()
-    logger.warning("Redis error during %s; caching bypassed until %s: %s",
-                   operation, _redis_retry_at, error)
+    logger.warning("Redis error during %s; caching bypassed for %.0f s: %s",
+                   operation, _redis_cooldown, error)
 
 
 def _make_cache_key(func, args, kwargs):

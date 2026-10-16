@@ -1,19 +1,21 @@
-from atmoswing_api.app.utils.logger import create_logger
-logger = create_logger()
-
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from atmoswing_api import cache
+from atmoswing_api.config import get_settings
+from atmoswing_api.app.utils.logger import configure_logging
 from atmoswing_api.__version__ import __version__
 from atmoswing_api.app.routes import meta, forecasts, aggregations, docs
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-import traceback
+
+configure_logging(get_settings())
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -67,13 +69,12 @@ async def custom_http_exception_handler(request: Request, exc: StarletteHTTPExce
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    tb = traceback.format_exc()
-    logger.error(f"Unhandled exception: {exc}\nTraceback:\n{tb}")
+    logger.error("Unhandled exception on %s", request.url.path, exc_info=exc)
     if isinstance(exc, MemoryError):
         logger.error("MemoryError: Possible resource exhaustion!")
     return JSONResponse(status_code=500, content={"detail": "Internal server error."})
 
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
-    logger.warning(f"Rate limit exceeded: {exc}")
+    logger.warning("Rate limit exceeded: %s", exc)
     return JSONResponse(status_code=429, content={"detail": "Rate limit exceeded. Please try again later."})
