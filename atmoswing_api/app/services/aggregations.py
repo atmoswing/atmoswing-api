@@ -1,11 +1,10 @@
 import os
-import glob
-
 import xarray as xr
 import numpy as np
 import asyncio
 
 from atmoswing_api.app.utils import utils
+from atmoswing_api.app.utils.errors import InvalidInputError
 
 
 async def get_entities_analog_values_percentile(
@@ -47,15 +46,8 @@ def _get_entities_analog_values_percentile(
     Synchronous function to get the precipitation values for a specific percentile
     from the netCDF file.
     """
-    if forecast_date == 'latest':
-        forecast_date = utils.get_last_forecast_date(data_dir, region)
-
-    region_path = utils.check_region_path(data_dir, region)
-    pattern = utils.get_files_pattern(region_path, forecast_date, method)
-    files = sorted(glob.glob(pattern))
-
-    if not files:
-        raise FileNotFoundError(f"No files found for pattern: {pattern}")
+    forecast_date, files = utils.list_forecast_files(
+        data_dir, region, forecast_date, method)
 
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
@@ -69,8 +61,10 @@ def _get_entities_analog_values_percentile(
             # Select the relevant stations
             if all_station_ids is None:
                 all_station_ids = ds.station_ids.values.tolist()
-            else:
-                assert all_station_ids == ds.station_ids.values.tolist()
+            elif all_station_ids != ds.station_ids.values.tolist():
+                # The values of all the configurations are combined per station
+                raise ValueError(f"The stations of {os.path.basename(file_path)} "
+                                 f"differ from those of the other configurations")
             station_indices = utils.get_relevant_stations_idx(ds)
 
             # Extracting the values
@@ -127,15 +121,8 @@ def _get_series_synthesis_per_method(data_dir: str, region: str, forecast_date: 
     Synchronous function to get the largest analog values for a given region, date,
     and percentile.
     """
-    if forecast_date == 'latest':
-        forecast_date = utils.get_last_forecast_date(data_dir, region)
-
-    region_path = utils.check_region_path(data_dir, region)
-    pattern = utils.get_files_pattern(region_path, forecast_date)
-    files = sorted(glob.glob(pattern))
-
-    if not files:
-        raise FileNotFoundError(f"No files found for pattern: {pattern}")
+    forecast_date, files = utils.list_forecast_files(
+        data_dir, region, forecast_date)
 
     method_ids = []
     largest_values = []
@@ -213,7 +200,6 @@ def _get_series_synthesis_total(data_dir: str, region: str, forecast_date: str,
     if forecast_date == 'latest':
         forecast_date = utils.get_last_forecast_date(data_dir, region)
 
-    region_path = utils.check_region_path(data_dir, region)
     largest_values_per_method = _get_series_synthesis_per_method(
         data_dir, region, forecast_date, percentile, normalize)
     largest_values_per_method = largest_values_per_method["series_percentiles"]
@@ -279,7 +265,7 @@ def _get_reference_values(ds, normalize, station_indices):
     try:
         ref_idx = axis.index(normalize)
     except ValueError:
-        raise ValueError(f"normalize must be in {axis}")
+        raise InvalidInputError(f"normalize must be in {axis}") from None
 
     ref_values = ds.reference_values[station_indices, ref_idx].astype(
         float).values

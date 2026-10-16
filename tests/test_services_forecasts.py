@@ -1,7 +1,12 @@
+import os
 import pytest
 from datetime import datetime
 
-from atmoswing_api.app.services.forecasts import *
+from atmoswing_api.app.services.forecasts import (
+    get_analog_criteria, get_analog_dates, get_analog_values, get_analog_values_best,
+    get_analog_values_percentiles, get_analogs, get_entities_analog_values_percentile,
+    get_reference_values, get_series_analog_values_best,
+    get_series_analog_values_percentiles, get_series_analog_values_percentiles_history)
 
 # Path to the data directory
 cwd = os.path.dirname(os.path.abspath(__file__))

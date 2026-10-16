@@ -1,5 +1,7 @@
 import re
 import os
+import json
+import logging
 import glob
 import hashlib
 import xarray
@@ -7,11 +9,44 @@ import numpy as np
 from pathlib import Path
 from datetime import datetime, date, timedelta
 
+from atmoswing_api.app.utils.errors import InvalidInputError, DataNotFoundError
+
+logger = logging.getLogger(__name__)
+
+def validate_path_component(name: str, label: str = "name") -> str:
+    """
+    Ensure that a user-provided value can safely be used as a single file or
+    directory name, so that it cannot escape the data directory.
+    Empty names, names starting with a dot (including '.' and '..', and hidden
+    directories such as '.prebuilt_cache') and names containing path separators
+    are rejected with an InvalidInputError.
+
+    Parameters
+    ----------
+    name: str
+        The value to check.
+    label: str
+        A description of the value, used in the error message.
+
+    Returns
+    -------
+    str
+        The validated name.
+    """
+    if (not isinstance(name, str) or not name or name.startswith(".")
+            or any(c in name for c in ("/", "\\", "\0"))):
+        raise InvalidInputError(f"Invalid {label}: {name!r}")
+
+    return name
+
+
 def check_region_path(data_dir: str, region: str) -> str:
     """
-    Check if the region path exists and is a symlink.
-    If it is a symlink, resolve it to the actual path.
-    If the path does not exist, raise a FileNotFoundError.
+    Check that the region is a valid directory name and that the region
+    directory exists in the data directory. Region directories can be symlinks
+    (e.g. to other mounted volumes); they are resolved to the actual path.
+    If the region is invalid or the directory does not exist (including broken
+    symlinks), raise an InvalidInputError or a DataNotFoundError.
 
     Parameters
     ----------
@@ -25,19 +60,15 @@ def check_region_path(data_dir: str, region: str) -> str:
     str
         The resolved path to the region directory.
     """
+    validate_path_component(region, "region")
+
     region_path = Path(data_dir) / region
-    region_path = region_path.resolve(strict=False)
 
-    if region_path.is_symlink():
-        if not region_path.exists():
-            raise FileNotFoundError(f"Broken symlink: {region_path}")
-        else:
-            return str(region_path)
+    # is_dir() follows symlinks, so broken symlinks are also rejected
+    if not region_path.is_dir():
+        raise DataNotFoundError(f"Region not found: {region}")
 
-    if not region_path.exists():
-        raise FileNotFoundError(f"Region directory not found: {region_path}")
-
-    return str(region_path)
+    return str(region_path.resolve())
 
 
 def convert_to_date(date_str: str) -> date:
@@ -61,7 +92,7 @@ def convert_to_date(date_str: str) -> date:
     try:
         return datetime.strptime(date_str, "%Y-%m-%d").date()
     except ValueError:
-        raise ValueError(f"Invalid date format ({date_str})")
+        raise InvalidInputError(f"Invalid date format ({date_str})") from None
 
 
 def convert_to_datetime(datetime_str: str) -> datetime:
@@ -119,8 +150,11 @@ def convert_to_target_date(forecast_date, lead_time) -> datetime:
         try:
             target_date = convert_to_datetime(lead_time)
             return target_date
-        except Exception as e:
-            dt = int(lead_time)  # in hours
+        except Exception:
+            try:
+                dt = int(lead_time)  # in hours
+            except ValueError:
+                raise InvalidInputError(f"Invalid lead time format ({lead_time})") from None
             target_date = forecast_date + timedelta(hours=dt)
             return target_date
 
@@ -128,7 +162,7 @@ def convert_to_target_date(forecast_date, lead_time) -> datetime:
         target_date = forecast_date + timedelta(hours=lead_time)
         return target_date
 
-    raise ValueError(f"Invalid lead time format ({lead_time})")
+    raise InvalidInputError(f"Invalid lead time format ({lead_time})")
 
 
 def get_files_pattern(region_path: str, datetime_str: str, method='*') -> str:
@@ -151,20 +185,47 @@ def get_files_pattern(region_path: str, datetime_str: str, method='*') -> str:
     str
         The file pattern to search for in the region directory.
     """
+    if method != '*':
+        method = glob.escape(validate_path_component(method, "method"))
+
     dt = convert_to_datetime(datetime_str)
     path = f"{region_path}/{dt.year:04d}/{dt.month:02d}/{dt.day:02d}"
     if not os.path.exists(path):
-        raise FileNotFoundError(f"Date directory not found: {path}")
+        raise DataNotFoundError(f"No forecast found for {dt:%Y-%m-%d}")
 
     file_pattern = f"{dt.year:04d}-{dt.month:02d}-{dt.day:02d}_{dt.hour:02d}.{method}.*.nc"
 
     return f"{path}/{file_pattern}"
 
 
+# Names of the directories and forecast files: YYYY/MM/DD/YYYY-MM-DD_HH.method.config.nc
+_YEAR_DIR = re.compile(r"\d{4}")
+_MONTH_OR_DAY_DIR = re.compile(r"\d{2}")
+_FORECAST_FILE = re.compile(r"(\d{4})-(\d{2})-(\d{2})_(\d{2})\.[^.]+\..+\.nc")
+
+
+def _sorted_entries(path: str, pattern: re.Pattern, dirs: bool) -> list:
+    """
+    Names of the directories (or files) of path fully matching pattern, latest
+    first. Other entries (hidden files, temporary files, ...) are ignored.
+    """
+    try:
+        with os.scandir(path) as entries:
+            names = [e.name for e in entries if pattern.fullmatch(e.name) and
+                     (e.is_dir() if dirs else e.is_file())]
+    except (FileNotFoundError, NotADirectoryError):
+        return []
+    return sorted(names, reverse=True)
+
+
 def get_last_forecast_date(data_dir: str, region: str) -> str:
     """
     Get the last forecast date from the filenames.
-    Directory structure: region_path/YYYY/MM/DD/YYYY-MM-DD_HH.method.region.nc
+    Directory structure: region_path/YYYY/MM/DD/YYYY-MM-DD_HH.method.config.nc
+
+    Only directories and files following this structure are considered, and a
+    directory without any forecast (e.g. being written or cleaned) is skipped in
+    favour of the previous one.
 
     Parameters
     ----------
@@ -180,38 +241,28 @@ def get_last_forecast_date(data_dir: str, region: str) -> str:
     """
     region_path = check_region_path(data_dir, region)
 
-    def get_latest_subdir(path):
-        subdirs = sorted(os.listdir(path), reverse=True)
-        if not subdirs:
-            raise ValueError(f"No subdirectories found in {path}")
-        return subdirs[0]
+    for year in _sorted_entries(region_path, _YEAR_DIR, dirs=True):
+        year_path = os.path.join(region_path, year)
+        for month in _sorted_entries(year_path, _MONTH_OR_DAY_DIR, dirs=True):
+            month_path = os.path.join(year_path, month)
+            for day in _sorted_entries(month_path, _MONTH_OR_DAY_DIR, dirs=True):
+                day_path = os.path.join(month_path, day)
+                hours = [match.group(4) for match in
+                         map(_FORECAST_FILE.fullmatch,
+                             _sorted_entries(day_path, _FORECAST_FILE, dirs=False))
+                         if match.group(1, 2, 3) == (year, month, day)]
+                for hour in sorted(hours, reverse=True):
+                    last_forecast_date = f"{year}-{month}-{day}T{hour}"
+                    try:
+                        convert_to_datetime(last_forecast_date)
+                    except InvalidInputError:
+                        continue  # e.g. a directory named 13 for the month
+                    return last_forecast_date
 
-    # Get the latest year, month, and day
-    year = get_latest_subdir(region_path)
-    month = get_latest_subdir(f"{region_path}/{year}")
-    day = get_latest_subdir(f"{region_path}/{year}/{month}")
-
-    # Get the latest file
-    files = sorted(os.listdir(f"{region_path}/{year}/{month}/{day}"), reverse=True)
-    if not files:
-        raise ValueError(f"No files found in {region_path}/{year}/{month}/{day}")
-
-    # Extract the hour from the latest file
-    last_file = files[0]
-    parts = last_file.split("_")
-    if len(parts) < 2:
-        raise ValueError(f"Invalid file format ({last_file})")
-    hour = parts[1].split(".")[0]
-
-    last_forecast_date = f"{year}-{month}-{day}T{hour}"
-
-    # Check that the forecast date is valid
-    _ = convert_to_datetime(last_forecast_date)
-
-    return last_forecast_date
+    raise DataNotFoundError(f"No forecast found for region {region}")
 
 
-def list_files(region_path: str, datetime_str: str) -> list:
+def list_files(region_path: str, datetime_str: str, method: str = '*') -> list:
     """
     List all files in the region path for a given datetime string.
 
@@ -221,13 +272,15 @@ def list_files(region_path: str, datetime_str: str) -> list:
         The path to the region directory.
     datetime_str: str
         The datetime string in the format "YYYY-MM-DDTHH" or "YYYY-MM-DD".
+    method: str
+        The method to filter the files by. Default is '*', which matches all methods.
 
     Returns
     -------
     list
         A sorted list of file paths matching the pattern for the given datetime.
     """
-    full_pattern = get_files_pattern(region_path, datetime_str)
+    full_pattern = get_files_pattern(region_path, datetime_str, method)
 
     files = sorted(glob.glob(full_pattern))
 
@@ -259,14 +312,103 @@ def get_file_path(
     str
         The full path to the file matching the given parameters.
     """
+    validate_path_component(method, "method")
+    validate_path_component(configuration, "configuration")
+
     dt = convert_to_datetime(datetime_str)
     path = f"{region_path}/{dt.year:04d}/{dt.month:02d}/{dt.day:02d}"
     if not os.path.exists(path):
-        raise FileNotFoundError(f"Date directory not found: {path}")
+        raise DataNotFoundError(f"No forecast found for {dt:%Y-%m-%d}")
 
     file_path = f"{path}/{dt.year:04d}-{dt.month:02d}-{dt.day:02d}_{dt.hour:02d}.{method}.{configuration}.nc"
 
     return file_path
+
+
+def get_forecast_file(
+        data_dir: str,
+        region: str,
+        forecast_date: str,
+        method: str,
+        configuration: str
+) -> tuple[str, str]:
+    """
+    Get the path to the forecast file of a given region, forecast date, method,
+    and configuration. The forecast date 'latest' is replaced by the last
+    available forecast date.
+
+    Parameters
+    ----------
+    data_dir: str
+        The base directory where the region directories are located.
+    region: str
+        The name of the region directory.
+    forecast_date: str
+        The forecast date in the format "YYYY-MM-DDTHH" or "YYYY-MM-DD", or 'latest'.
+    method: str
+        The method of the forecast.
+    configuration: str
+        The configuration of the forecast.
+
+    Returns
+    -------
+    forecast_date: str
+        The forecast date ('latest' being resolved).
+    file_path: str
+        The full path to the existing forecast file.
+    """
+    region_path = check_region_path(data_dir, region)
+
+    if forecast_date == 'latest':
+        forecast_date = get_last_forecast_date(data_dir, region)
+
+    file_path = get_file_path(region_path, forecast_date, method, configuration)
+    if not os.path.exists(file_path):
+        raise DataNotFoundError(f"No forecast found for {forecast_date}, method "
+                                f"{method} and configuration {configuration}")
+
+    return forecast_date, file_path
+
+
+def list_forecast_files(
+        data_dir: str,
+        region: str,
+        forecast_date: str,
+        method: str = '*'
+) -> tuple[str, list]:
+    """
+    List the forecast files of a given region and forecast date, optionally
+    restricted to a method. The forecast date 'latest' is replaced by the last
+    available forecast date.
+
+    Parameters
+    ----------
+    data_dir: str
+        The base directory where the region directories are located.
+    region: str
+        The name of the region directory.
+    forecast_date: str
+        The forecast date in the format "YYYY-MM-DDTHH" or "YYYY-MM-DD", or 'latest'.
+    method: str
+        The method to filter the files by. Default is '*', which matches all methods.
+
+    Returns
+    -------
+    forecast_date: str
+        The forecast date ('latest' being resolved).
+    files: list
+        A sorted, non-empty list of forecast file paths.
+    """
+    region_path = check_region_path(data_dir, region)
+
+    if forecast_date == 'latest':
+        forecast_date = get_last_forecast_date(data_dir, region)
+
+    files = list_files(region_path, forecast_date, method=method)
+    if not files:
+        raise DataNotFoundError(f"No forecast found for {forecast_date}")
+
+    return forecast_date, files
 
 
 def get_row_indices(
@@ -325,25 +467,31 @@ def get_target_date_index(
     -------
     target_date_idx: int
         The index of the target date in the dataset.
-    target_date_found: datetime|None
-        The date found in the dataset that matches the target date.
+    target_date_found: datetime
+        The date found in the dataset that matches the target date (the last one
+        before it when there is no exact match).
+    None is returned when the target date is outside the forecast target dates.
     """
     # Find the lead time
     target_dates = ds.target_dates.values
     target_date = convert_to_datetime(target_date)
     target_date_idx = -1
     target_date_found = None
-    for i, date in enumerate(target_dates):
-        date = np.datetime64(date).astype('datetime64[s]').item()
-        if date == target_date:
-            return i, date
-        elif date < target_date:
+    for i, value in enumerate(target_dates):
+        date_i = np.datetime64(value).astype('datetime64[s]').item()
+        if date_i == target_date:
+            return i, date_i
+        elif date_i < target_date:
             if i == len(target_dates) - 1:
                 return None
             target_date_idx = i
-            target_date_found = date
-        elif date > target_date:
+            target_date_found = date_i
+        elif date_i > target_date:
             break
+
+    if target_date_idx < 0:
+        # The target date is before the first target date of the forecast
+        return None
 
     return target_date_idx, target_date_found
 
@@ -398,7 +546,7 @@ def get_entity_index(ds: xarray.Dataset, entity: int | str) -> int:
     indices = np.where(station_ids == entity)[0]
     entity_idx = int(indices[0]) if indices.size > 0 else -1
     if entity_idx == -1:
-        raise ValueError(f"Entity not found: {entity}")
+        raise InvalidInputError(f"Entity not found: {entity}")
 
     return entity_idx
 
@@ -471,7 +619,7 @@ def sanitize_unicode_surrogates(obj):
 
 
 def decode_surrogate_escaped_utf8(s: str) -> str:
-    """Repair strings where UTF-8 bytes were turned into low-surrogate code points
+    r"""Repair strings where UTF-8 bytes were turned into low-surrogate code points
     via the 'surrogateescape' error handler or similar mishandling, e.g.
     'C\udcc3\udca9vennes' -> 'Cévennes'. We rebuild the original byte stream by
     mapping each U+DC80..U+DCFF to its raw byte 0x80..0xFF, while encoding all
@@ -539,3 +687,30 @@ def make_cache_paths(prebuilt_dir: Path, func_name: str, region: str, forecast_d
     safe_forecast = forecast_date.replace(':', '-')
     filename = f"{func_name}_{region}_{safe_forecast}_{hash_suffix}.json"
     return prebuilt_dir / filename
+
+
+def load_prebuilt_result(data_dir: str, func_name: str, region: str, forecast_date: str,
+                         percentile: int | None = None, normalize: int | None = None,
+                         **extra):
+    """
+    Load a result prebuilt by the warmup script (scripts/warmup_cache.py), if any.
+    The arguments must match the ones used by the warmup script to compute the
+    cache hash.
+
+    Returns
+    -------
+    The prebuilt result, or None if there is no (readable) prebuilt file.
+    """
+    prebuilt_dir = Path(data_dir) / '.prebuilt_cache'
+    hash_suffix = compute_cache_hash(func_name, region, forecast_date, percentile,
+                                     normalize, **extra)
+    cache_path = make_cache_paths(prebuilt_dir, func_name, region, forecast_date,
+                                  hash_suffix)
+    if not cache_path.is_file():
+        return None
+    try:
+        data = json.loads(cache_path.read_text(encoding='utf-8'))
+        return data.get('result')
+    except Exception as e:
+        logger.warning("Failed to read prebuilt cache %s: %s", cache_path.name, e)
+        return None

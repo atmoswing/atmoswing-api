@@ -1,7 +1,8 @@
 [project]
 name = "atmoswing-api"
-version = "1.1.1"
+version = "1.2.0"
 description = "A web API for AtmoSwing forecasts"
+readme = "README.md"
 requires-python = ">=3.10"
 authors = [
     { name = "Pascal Horton", email = "pascal.horton@terranum.ch" }
@@ -9,16 +10,20 @@ authors = [
 dependencies = [
     "fastapi",
     "uvicorn[standard]",
+    "numpy",
     "xarray",
     "h5netcdf",
     "h5py",
+    "dask",
     "pydantic",
     "pydantic-settings",
     "python-dotenv",
-    "dask",
-    "pytest",
-    "pytest-asyncio",
+    "typing-extensions",
+    "limits>=4",
+    "jinja2",
+    "redis>=5.0.1",
 ]
+
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -26,11 +31,36 @@ classifiers = [
 ]
 license = { file = "LICENSE" }
 
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-asyncio",
+    "httpx",
+]
+
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 # Search from project root and include the root package and all its subpackages
 where = ["."]
 include = ["atmoswing_api*"]
+
+[tool.setuptools.package-data]
+# Jinja templates used by the /minidocs route
+atmoswing_api = ["templates/*.html"]
+
+[tool.ruff]
+target-version = "py310"
+# Same width as the previous flake8 configuration
+line-length = 127
+extend-exclude = ["build", "data"]
+
+[tool.ruff.lint]
+# Syntax errors, statements (E7), pyflakes (F) and bugbear (B)
+select = ["E9", "E7", "F", "B"]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI declares parameters with calls in argument defaults
+extend-immutable-calls = ["fastapi.Query", "fastapi.Path", "fastapi.Depends"]

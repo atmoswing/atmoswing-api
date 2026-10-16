@@ -1,0 +1,15 @@
+# Only the package is copied into the image (see Dockerfile); keep the build
+# context small and free of local secrets and data.
+.git
+.github
+.idea
+.venv
+.env
+.coverage
+.pytest_cache
+**/__pycache__
+*.egg-info
+build
+dist
+data
+tests

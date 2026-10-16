@@ -17,9 +17,11 @@
     <div class="route">
         <h2>{{ route.path }}</h2>
         <p><strong>Methods:</strong> {{ route.methods | join(', ') }}</p>
-        <p><strong>Handler:</strong> {{ route.name }}</p>
         {% if route.summary %}
-        <p><strong>Description:</strong> {{ route.summary }}</p>
+        <p><strong>Summary:</strong> {{ route.summary }}</p>
+        {% endif %}
+        {% if route.description %}
+        <p><strong>Description:</strong> {{ route.description }}</p>
         {% endif %}
         {% if route.parameters %}
         <p><strong>Parameters:</strong> {{ route.parameters | join(', ') }}</p>

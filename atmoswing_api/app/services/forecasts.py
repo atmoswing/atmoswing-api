@@ -1,10 +1,9 @@
-import os
-
 import xarray as xr
 import numpy as np
 import asyncio
 
 from atmoswing_api.app.utils import utils
+from atmoswing_api.app.utils.errors import InvalidInputError, DataNotFoundError
 
 
 async def get_reference_values(data_dir: str, region: str, forecast_date: str,
@@ -133,13 +132,8 @@ def _get_reference_values(data_dir: str, region: str, forecast_date: str, method
     """
     Synchronous function to get the reference values from the netCDF file.
     """
-    if forecast_date == 'latest':
-        forecast_date = utils.get_last_forecast_date(data_dir, region)
-
-    region_path = utils.check_region_path(data_dir, region)
-    file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+    forecast_date, file_path = utils.get_forecast_file(
+        data_dir, region, forecast_date, method, configuration)
 
     with xr.open_dataset(file_path, engine="h5netcdf") as ds:
         entity_idx = utils.get_entity_index(ds, entity)
@@ -164,13 +158,8 @@ def _get_analogs(data_dir: str, region: str, forecast_date: str, method: str,
     """
     Synchronous function to get the analogs from the netCDF file.
     """
-    if forecast_date == 'latest':
-        forecast_date = utils.get_last_forecast_date(data_dir, region)
-
-    region_path = utils.check_region_path(data_dir, region)
-    file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+    forecast_date, file_path = utils.get_forecast_file(
+        data_dir, region, forecast_date, method, configuration)
 
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
@@ -190,7 +179,7 @@ def _get_analogs(data_dir: str, region: str, forecast_date: str, method: str,
             ranks = list(range(1, len(analog_dates) + 1))
             analogs = [{"date": date, "criteria": criteria, "value": value, "rank": rank}
                        for date, criteria, value, rank in
-                       zip(analog_dates, analog_criteria, values, ranks)]
+                       zip(analog_dates, analog_criteria, values, ranks, strict=True)]
 
     return {
         "parameters": {
@@ -211,13 +200,8 @@ def _get_analog_dates(data_dir: str, region: str, forecast_date: str, method: st
     """
     Synchronous function to get the analog dates from the netCDF file.
     """
-    if forecast_date == 'latest':
-        forecast_date = utils.get_last_forecast_date(data_dir, region)
-
-    region_path = utils.check_region_path(data_dir, region)
-    file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+    forecast_date, file_path = utils.get_forecast_file(
+        data_dir, region, forecast_date, method, configuration)
 
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
@@ -248,13 +232,8 @@ def _get_analog_criteria(data_dir: str, region: str, forecast_date: str, method:
     """
     Synchronous function to get the analog criteria from the netCDF file.
     """
-    if forecast_date == 'latest':
-        forecast_date = utils.get_last_forecast_date(data_dir, region)
-
-    region_path = utils.check_region_path(data_dir, region)
-    file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+    forecast_date, file_path = utils.get_forecast_file(
+        data_dir, region, forecast_date, method, configuration)
 
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
@@ -285,13 +264,8 @@ def _get_analog_values(data_dir: str, region: str, forecast_date: str, method: s
     """
     Synchronous function to get the precipitation values from the netCDF file.
     """
-    if forecast_date == 'latest':
-        forecast_date = utils.get_last_forecast_date(data_dir, region)
-
-    region_path = utils.check_region_path(data_dir, region)
-    file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+    forecast_date, file_path = utils.get_forecast_file(
+        data_dir, region, forecast_date, method, configuration)
 
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
@@ -326,13 +300,8 @@ def _get_analog_values_percentiles(
     Synchronous function to get the precipitation values for specific percentiles
     from the netCDF file.
     """
-    if forecast_date == 'latest':
-        forecast_date = utils.get_last_forecast_date(data_dir, region)
-
-    region_path = utils.check_region_path(data_dir, region)
-    file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+    forecast_date, file_path = utils.get_forecast_file(
+        data_dir, region, forecast_date, method, configuration)
 
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
@@ -375,13 +344,8 @@ def _get_analog_values_best(
     Synchronous function to get the precipitation values for the best analogs
     from the netCDF file.
     """
-    if forecast_date == 'latest':
-        forecast_date = utils.get_last_forecast_date(data_dir, region)
-
-    region_path = utils.check_region_path(data_dir, region)
-    file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+    forecast_date, file_path = utils.get_forecast_file(
+        data_dir, region, forecast_date, method, configuration)
 
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
@@ -418,13 +382,8 @@ def _get_entities_analog_values_percentile(
     Synchronous function to get the precipitation values for a specific percentile
     from the netCDF file.
     """
-    if forecast_date == 'latest':
-        forecast_date = utils.get_last_forecast_date(data_dir, region)
-
-    region_path = utils.check_region_path(data_dir, region)
-    file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+    forecast_date, file_path = utils.get_forecast_file(
+        data_dir, region, forecast_date, method, configuration)
 
     target_date = utils.convert_to_target_date(forecast_date, lead_time)
 
@@ -451,7 +410,7 @@ def _get_entities_analog_values_percentile(
             try:
                 ref_idx = axis.index(normalize)
             except ValueError:
-                raise ValueError(f"normalize must be in {axis}")
+                raise InvalidInputError(f"normalize must be in {axis}") from None
             ref_values = ds.reference_values[:, ref_idx].astype(float).values
 
             # Normalize the values
@@ -481,13 +440,8 @@ def _get_series_analog_values_best(
     Synchronous function to get the time series of the best analog values
     from the netCDF file.
     """
-    if forecast_date == 'latest':
-        forecast_date = utils.get_last_forecast_date(data_dir, region)
-
-    region_path = utils.check_region_path(data_dir, region)
-    file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+    forecast_date, file_path = utils.get_forecast_file(
+        data_dir, region, forecast_date, method, configuration)
 
     with xr.open_dataset(file_path, engine="h5netcdf") as ds:
         target_dates = [np.datetime64(date).astype('datetime64[s]').item() for date in
@@ -528,13 +482,8 @@ def _get_series_analog_values_percentiles(
     Synchronous function to get the time series for specific percentiles
     from the netCDF file.
     """
-    if forecast_date == 'latest':
-        forecast_date = utils.get_last_forecast_date(data_dir, region)
-
-    region_path = utils.check_region_path(data_dir, region)
-    file_path = utils.get_file_path(region_path, forecast_date, method, configuration)
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+    forecast_date, file_path = utils.get_forecast_file(
+        data_dir, region, forecast_date, method, configuration)
 
     with xr.open_dataset(file_path, engine="h5netcdf") as ds:
         entity_idx = utils.get_entity_index(ds, entity)
@@ -590,7 +539,7 @@ def _get_series_analog_values_percentiles_history(
     if forecast_date == 'latest':
         forecast_date = utils.get_last_forecast_date(data_dir, region)
 
-    region_path = utils.check_region_path(data_dir, region)
+    utils.check_region_path(data_dir, region)
     diff = np.timedelta64(3, 'h')
     dt = utils.convert_to_datetime(forecast_date)
     counter_found = 0
@@ -604,14 +553,13 @@ def _get_series_analog_values_percentiles_history(
 
         counter_tot += 1
         dt = dt - diff
-        path_dir = f"{region_path}/{dt.year:04d}/{dt.month:02d}/{dt.day:02d}"
-        path = f"{path_dir}/{dt.year:04d}-{dt.month:02d}-{dt.day:02d}_{dt.hour:02d}.{method}.{configuration}.nc"
-        if not os.path.exists(path):
+        try:
+            series_percentiles = _get_series_analog_values_percentiles(
+                data_dir, region, f"{dt:%Y-%m-%dT%H}", method, configuration,
+                entity, percentiles)
+        except DataNotFoundError:
+            # No forecast for this date
             continue
-
-        dt_str = f"{dt.year:04d}-{dt.month:02d}-{dt.day:02d}T{dt.hour:02d}"
-        series_percentiles = _get_series_analog_values_percentiles(
-            data_dir, region, dt_str, method, configuration, entity, percentiles)
         series_percentiles = series_percentiles["series_values"]
 
         forecasts.append(series_percentiles)

@@ -3,7 +3,7 @@ import os
 from unittest.mock import patch, MagicMock
 
 from atmoswing_api.app.services.meta import get_last_forecast_date, \
-    _get_last_forecast_date, get_method_list, _get_methods_from_netcdf, \
+    get_method_list, _get_methods_from_netcdf, \
     get_method_configs_list, get_entities_list, get_relevant_entities_list
 
 # Path to the data directory
@@ -33,103 +33,6 @@ async def test_get_last_forecast_date_from_files():
 
     assert result == {'last_forecast_date': '2024-10-06T18',
                       'parameters': {'region': 'adn'}}
-
-
-@patch("os.listdir")
-@patch("atmoswing_api.app.utils.utils.check_region_path")
-@patch("atmoswing_api.app.utils.utils.convert_to_datetime")
-def test_get_last_forecast_date_mock(mock_convert_to_datetime, mock_check_region_path, mock_listdir):
-    # Mock os.listdir for each directory level
-    mock_listdir.side_effect = [
-        ["2023"],
-        ["01"],
-        ["01"],
-        ["2023-01-01_12.method.region.nc"]
-    ]
-
-    # Mock convert_to_datetime to pass the validation
-    mock_convert_to_datetime.return_value = None
-
-    # Mock check_region_path to return a mocked path
-    mock_check_region_path.return_value = "/mocked_path/region"
-
-    region_path = "/mocked_path/region"
-    result = _get_last_forecast_date("/mocked_path", "region")
-
-    assert result == {'last_forecast_date': '2023-01-01T12',
-                      'parameters': {'region': 'region'}}
-    mock_listdir.assert_any_call(f"{region_path}")
-    mock_listdir.assert_any_call(f"{region_path}/2023")
-    mock_listdir.assert_any_call(f"{region_path}/2023/01")
-    mock_listdir.assert_any_call(f"{region_path}/2023/01/01")
-    mock_convert_to_datetime.assert_called_once_with("2023-01-01T12")
-
-
-@patch("os.listdir")
-@patch("atmoswing_api.app.utils.utils.check_region_path")
-def test_get_last_forecast_date_no_subdirs(mock_check_region_path, mock_listdir):
-    # Mock os.listdir to return an empty list
-    mock_listdir.return_value = []
-
-    # Mock check_region_path to return a mocked path
-    mock_check_region_path.return_value = "/mocked_path/region"
-
-    with pytest.raises(ValueError, match="No subdirectories found in /mocked_path/region"):
-        _get_last_forecast_date("/mocked_path", "region")
-
-
-@patch("os.listdir")
-@patch("atmoswing_api.app.utils.utils.check_region_path")
-def test_get_last_forecast_date_no_files(mock_check_region_path, mock_listdir):
-    # Mock os.listdir for subdirectories and an empty file list
-    mock_listdir.side_effect = [
-        ["2023"],
-        ["01"],
-        ["01"],
-        []  # No files
-    ]
-
-    # Mock check_region_path to return a mocked path
-    mock_check_region_path.return_value = "/mocked_path/region"
-
-    with pytest.raises(ValueError, match="No files found in /mocked_path/region/2023/01/01"):
-        _get_last_forecast_date("/mocked_path", "region")
-
-
-@patch("os.listdir")
-@patch("atmoswing_api.app.utils.utils.check_region_path")
-def test_get_last_forecast_date_invalid_file_format(mock_check_region_path, mock_listdir):
-    # Mock os.listdir for subdirectories and an invalid file format
-    mock_listdir.side_effect = [
-        ["2023"],
-        ["01"],
-        ["01"],
-        ["invalid.nc"]  # Invalid file format
-    ]
-
-    # Mock check_region_path to return a mocked path
-    mock_check_region_path.return_value = "/mocked_path/region"
-
-    with pytest.raises(ValueError, match="Invalid file format"):
-        _get_last_forecast_date("/mocked_path", "region")
-
-
-@patch("os.listdir")
-@patch("atmoswing_api.app.utils.utils.check_region_path")
-def test_get_last_forecast_date_invalid_datetime_format(mock_check_region_path, mock_listdir):
-    # Mock os.listdir for subdirectories and an invalid file format
-    mock_listdir.side_effect = [
-        ["2023"],
-        ["01"],
-        ["01"],
-        ["invalid_file_name.nc"]  # Invalid file format
-    ]
-
-    # Mock check_region_path to return a mocked path
-    mock_check_region_path.return_value = "/mocked_path/region"
-
-    with pytest.raises(ValueError, match="Invalid date format"):
-        _get_last_forecast_date("/mocked_path", "region")
 
 
 @pytest.mark.asyncio
@@ -185,7 +88,7 @@ def test_get_methods_from_netcdf_mock(mock_open_dataset, mock_check_region_path,
     result = _get_methods_from_netcdf("/mocked_path", "region", "2023-01-01")
 
     assert result["methods"] == [{"id": 1, "name": "Method A"}, {"id": 2, "name": "Method B"}]
-    mock_list_files.assert_called_once_with("/mocked_path/region", "2023-01-01")
+    mock_list_files.assert_called_once_with("/mocked_path/region", "2023-01-01", method="*")
     assert mock_open_dataset.call_count == 2
 
 
@@ -198,7 +101,7 @@ def test_get_methods_from_netcdf_no_files(mock_check_region_path, mock_list_file
     # Mock check_region_path to return a mocked path
     mock_check_region_path.return_value = "/mocked_path/region"
 
-    with pytest.raises(FileNotFoundError, match="No files found for date: 2023-01-01"):
+    with pytest.raises(FileNotFoundError, match="No forecast found for 2023-01-01"):
         _get_methods_from_netcdf("/mocked_path", "region","2023-01-01")
 
 
@@ -261,7 +164,7 @@ async def test_get_method_configs_list_mock(
 
     # Ensure the mocked methods were called with expected arguments
     mock_check_region_path.assert_called_once_with("/mocked_path", "region1")
-    mock_list_files.assert_called_once_with("/mocked_path/region1", "2023-01-01")
+    mock_list_files.assert_called_once_with("/mocked_path/region1", "2023-01-01", method="*")
     mock_open_dataset.assert_any_call("/mocked/file1.nc", engine="h5netcdf")
     mock_open_dataset.assert_any_call("/mocked/file2.nc", engine="h5netcdf")
 

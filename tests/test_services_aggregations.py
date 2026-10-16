@@ -1,7 +1,10 @@
+import os
 import pytest
 from datetime import datetime
 
-from atmoswing_api.app.services.aggregations import *
+from atmoswing_api.app.services.aggregations import (
+    get_entities_analog_values_percentile, get_series_synthesis_per_method,
+    get_series_synthesis_total)
 
 # Path to the data directory
 cwd = os.path.dirname(os.path.abspath(__file__))
