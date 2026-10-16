@@ -47,4 +47,4 @@ The image runs as a non-root user (`APP_UID`/`APP_GID` build args, default 1000)
 
 ## Release
 
-Version lives in both `pyproject.toml` and `atmoswing_api/__version__.py`; update both and `CHANGELOG.md`. GitHub workflows publish to PyPI and build the `atmoswing/web-api` Docker image; both call `tests.yml` (a reusable workflow) first, and the Docker workflow smoke-tests the built image (healthy, `/minidocs` lists routes, non-root) before pushing.
+The version is defined only in `pyproject.toml` (update it and `CHANGELOG.md`); `atmoswing_api/__version__.py` reads it from the installed package metadata, so reinstall (`pip install -e .`) after changing it, otherwise `tests/test_version.py` fails. GitHub workflows publish to PyPI and build the `atmoswing/web-api` Docker image; both call `tests.yml` (a reusable workflow) first, and the Docker workflow smoke-tests the built image (healthy, `/minidocs` lists routes, non-root) before pushing.
