@@ -51,3 +51,10 @@ def test_minidocs_route_limit():
     assert "Retry-After" in response.headers
     # Other routes are not affected by the route limit
     assert client.get("/meta/show-config").status_code == 200
+
+
+def test_health_is_not_rate_limited(small_budget):
+    client = TestClient(app)
+    assert statuses(client, ["/health"] * 10) == [200] * 10
+    assert client.get("/health").json() == {"status": "ok"}
+    assert statuses(client, ["/meta/show-config"] * 5) == [200] * 5

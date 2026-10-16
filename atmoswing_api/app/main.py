@@ -47,6 +47,12 @@ app.include_router(meta.router, prefix="/meta", tags=["Metadata"])
 app.include_router(forecasts.router, prefix="/forecasts", tags=["Data from a single forecast"])
 app.include_router(aggregations.router, prefix="/aggregations", tags=["Aggregated forecast data"])
 
+@app.get("/health", include_in_schema=False)
+async def health():
+    """Liveness check (used by the Docker HEALTHCHECK). Does not access the data."""
+    return {"status": "ok"}
+
+
 @app.exception_handler(StarletteHTTPException)
 async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
     if exc.status_code == 404:

@@ -40,6 +40,10 @@ API docs at `/docs`, `/redoc`, `/minidocs` (custom template `templates/api_doc.h
 
 An autouse fixture in `tests/conftest.py` overrides `config.get_settings` so routes use `tests/data`, and restores `app.dependency_overrides` after each test. Use the `use_data_dir` fixture to point routes at another directory (e.g. `tmp_path`). Tests needing Redis are skipped when it is unreachable; CI provides a Redis service.
 
+## Docker
+
+The image runs as a non-root user (`APP_UID`/`APP_GID` build args, default 1000) with read-only needs; deployments grant access to the region directories with compose `group_add`. The cron jobs that write to the data directory (`cleaner.py`, `warmup_cache.py`, `.prebuilt_cache`) run via `docker exec -u 0`. `HEALTHCHECK` calls `/health` (not in the schema, exempt from rate limiting).
+
 ## Release
 
 Version lives in both `pyproject.toml` and `atmoswing_api/__version__.py`; update both and `CHANGELOG.md`. GitHub workflows publish to PyPI and build the `atmoswing/web-api` Docker image.

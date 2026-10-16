@@ -34,6 +34,12 @@ services:
   atmoswing-api:
     image: atmoswing/atmoswing-api:main
     container_name: atmoswing-api-main
+    # The API runs as a non-root user (UID/GID 1000 by default) and only reads the
+    # data. Add the groups owning the region directories (numeric GIDs, see
+    # `getent group atmoswing_adn`), or set `user: "<uid>:<gid>"`.
+    group_add:
+      - "1001"  # atmoswing_adn
+      - "1002"  # atmoswing_zap
     ports:
       - "8000:8000"
     volumes:
@@ -65,12 +71,28 @@ proxy connects from (e.g. its Docker network), and make the proxy set the
 `X-Forwarded-For` header. Never use `*` when the API port is reachable without the
 proxy: clients could then send any address and bypass the rate limit.
 
-## Cleanup
-
-To remove the past forecasts automatically, set a cron tab to run:
+The forecast files must be readable by the groups added with `group_add` (e.g.
+uploaded with an SFTP umask of 027 or 022). To check the access of the API user:
 
 ```
-sudo docker exec atmoswing-api-main python3 /app/atmoswing_api/scripts/cleaner.py --data-dir /app/data --keep-days 60
+sudo docker exec atmoswing-api-main ls /app/data/adn
+```
+
+The image has a health check (`/health`, not rate limited); `docker ps` shows the
+container status. Set `WEB_CONCURRENCY` to run several worker processes (each one
+has its own rate limit counters).
+
+## Scheduled jobs
+
+The scripts writing to the data directory run as root (`-u 0`), since the API user
+only has read access. To remove the past forecasts and precompute the heavy
+requests, set a cron tab such as:
+
+```
+# Remove the forecasts older than 60 days (daily at 02:00)
+0 2 * * * sudo docker exec -u 0 atmoswing-api-main python3 /app/atmoswing_api/scripts/cleaner.py --data-dir /app/data --keep-days 60
+# Precompute the heavy requests of the last 10 days (every 10 minutes)
+*/10 * * * * sudo docker exec -u 0 atmoswing-api-main python3 /app/atmoswing_api/scripts/warmup_cache.py --data-dir /app/data --days 10
 ```
 
 

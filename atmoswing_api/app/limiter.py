@@ -22,6 +22,9 @@ RATE_LIMIT_MESSAGE = "Rate limit exceeded. Please try again later."
 _storage = storage.MemoryStorage()
 _limiter = strategies.MovingWindowRateLimiter(_storage)
 
+# Paths not counted (e.g. the Docker health check, run every 30 s)
+EXEMPT_PATHS = {"/health"}
+
 # Budget shared by all the requests of a client (settings.rate_limit)
 application_limit: RateLimitItem = parse(get_settings().rate_limit)
 
@@ -60,7 +63,7 @@ class RateLimitMiddleware:
         self.app = app
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send):
-        if scope["type"] == "http":
+        if scope["type"] == "http" and scope["path"] not in EXEMPT_PATHS:
             retry_after = _hit(application_limit, "application", _client_key(scope))
             if retry_after is not None:
                 response = JSONResponse(status_code=429,
