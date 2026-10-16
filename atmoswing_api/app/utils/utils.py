@@ -198,10 +198,34 @@ def get_files_pattern(region_path: str, datetime_str: str, method='*') -> str:
     return f"{path}/{file_pattern}"
 
 
+# Names of the directories and forecast files: YYYY/MM/DD/YYYY-MM-DD_HH.method.config.nc
+_YEAR_DIR = re.compile(r"\d{4}")
+_MONTH_OR_DAY_DIR = re.compile(r"\d{2}")
+_FORECAST_FILE = re.compile(r"(\d{4})-(\d{2})-(\d{2})_(\d{2})\.[^.]+\..+\.nc")
+
+
+def _sorted_entries(path: str, pattern: re.Pattern, dirs: bool) -> list:
+    """
+    Names of the directories (or files) of path fully matching pattern, latest
+    first. Other entries (hidden files, temporary files, ...) are ignored.
+    """
+    try:
+        with os.scandir(path) as entries:
+            names = [e.name for e in entries if pattern.fullmatch(e.name) and
+                     (e.is_dir() if dirs else e.is_file())]
+    except (FileNotFoundError, NotADirectoryError):
+        return []
+    return sorted(names, reverse=True)
+
+
 def get_last_forecast_date(data_dir: str, region: str) -> str:
     """
     Get the last forecast date from the filenames.
-    Directory structure: region_path/YYYY/MM/DD/YYYY-MM-DD_HH.method.region.nc
+    Directory structure: region_path/YYYY/MM/DD/YYYY-MM-DD_HH.method.config.nc
+
+    Only directories and files following this structure are considered, and a
+    directory without any forecast (e.g. being written or cleaned) is skipped in
+    favour of the previous one.
 
     Parameters
     ----------
@@ -217,35 +241,25 @@ def get_last_forecast_date(data_dir: str, region: str) -> str:
     """
     region_path = check_region_path(data_dir, region)
 
-    def get_latest_subdir(path):
-        subdirs = sorted(os.listdir(path), reverse=True)
-        if not subdirs:
-            raise DataNotFoundError(f"No forecast found for region {region}")
-        return subdirs[0]
+    for year in _sorted_entries(region_path, _YEAR_DIR, dirs=True):
+        year_path = os.path.join(region_path, year)
+        for month in _sorted_entries(year_path, _MONTH_OR_DAY_DIR, dirs=True):
+            month_path = os.path.join(year_path, month)
+            for day in _sorted_entries(month_path, _MONTH_OR_DAY_DIR, dirs=True):
+                day_path = os.path.join(month_path, day)
+                hours = [match.group(4) for match in
+                         map(_FORECAST_FILE.fullmatch,
+                             _sorted_entries(day_path, _FORECAST_FILE, dirs=False))
+                         if match.group(1, 2, 3) == (year, month, day)]
+                for hour in sorted(hours, reverse=True):
+                    last_forecast_date = f"{year}-{month}-{day}T{hour}"
+                    try:
+                        convert_to_datetime(last_forecast_date)
+                    except InvalidInputError:
+                        continue  # e.g. a directory named 13 for the month
+                    return last_forecast_date
 
-    # Get the latest year, month, and day
-    year = get_latest_subdir(region_path)
-    month = get_latest_subdir(f"{region_path}/{year}")
-    day = get_latest_subdir(f"{region_path}/{year}/{month}")
-
-    # Get the latest file
-    files = sorted(os.listdir(f"{region_path}/{year}/{month}/{day}"), reverse=True)
-    if not files:
-        raise DataNotFoundError(f"No forecast found for region {region}")
-
-    # Extract the hour from the latest file
-    last_file = files[0]
-    parts = last_file.split("_")
-    if len(parts) < 2:
-        raise ValueError(f"Invalid file format ({last_file})")
-    hour = parts[1].split(".")[0]
-
-    last_forecast_date = f"{year}-{month}-{day}T{hour}"
-
-    # Check that the forecast date is valid
-    _ = convert_to_datetime(last_forecast_date)
-
-    return last_forecast_date
+    raise DataNotFoundError(f"No forecast found for region {region}")
 
 
 def list_files(region_path: str, datetime_str: str, method: str = '*') -> list:
